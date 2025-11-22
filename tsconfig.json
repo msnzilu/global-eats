@@ -7,7 +7,9 @@
         "./*"
       ]
     },
-    "types": ["nativewind-global-types"]
+    "types": [
+      "nativewind-global-types"
+    ]
   },
   "include": [
     "**/*.ts",

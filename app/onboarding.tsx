@@ -1,71 +1,433 @@
-import { View, Text, Button, ActivityIndicator } from 'react-native';
+import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase/config';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Onboarding() {
     const router = useRouter();
-    const { user } = useAuth();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const insets = useSafeAreaInsets();
+    const [currentStep, setCurrentStep] = useState(0);
 
-    const handleComplete = async () => {
-        if (!user) return;
+    // Step 1: Dietary Preferences
+    const [dietType, setDietType] = useState('None');
+    const [allergies, setAllergies] = useState<string[]>([]);
 
-        setIsSubmitting(true);
+    // Step 2: Health Goals
+    const [goal, setGoal] = useState('Maintain Weight');
+    const [targetCalories, setTargetCalories] = useState('2000');
 
-        try {
-            // Save user profile to Firestore
-            await setDoc(doc(db, 'users', user.uid), {
-                displayName: user.displayName || 'User',
-                email: user.email,
-                dietaryPreferences: [], // TODO: collect from form
-                allergies: [],
-                budget: 0,
-                hasCompletedOnboarding: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            });
+    // Step 3: Meal Preferences
+    const [mealsPerDay, setMealsPerDay] = useState(2);
+    const [cuisines, setCuisines] = useState<string[]>(['Italian', 'Mexican']);
+    const [cookingTime, setCookingTime] = useState('30-45 min');
 
-            // Navigation will happen automatically via useAuth hook
-        } catch (error) {
-            console.error('Error saving profile:', error);
-            alert('Failed to save profile. Please try again.');
-        } finally {
-            setIsSubmitting(false);
+    const dietTypes = ['None', 'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo'];
+    const commonAllergies = ['Peanuts', 'Tree Nuts', 'Dairy', 'Eggs', 'Soy', 'Wheat', 'Shellfish', 'Fish'];
+    const goals = ['Lose Weight', 'Maintain Weight', 'Gain Muscle', 'Improve Health'];
+    const cuisineOptions = ['Italian', 'Mexican', 'Japanese', 'Chinese', 'Indian', 'Thai', 'Mediterranean', 'American'];
+    const cookingTimes = ['15-30 min', '30-45 min', '45-60 min', '60+ min'];
+
+    const toggleItem = (item: string, list: string[], setList: (list: string[]) => void) => {
+        if (list.includes(item)) {
+            setList(list.filter(i => i !== item));
+        } else {
+            setList([...list, item]);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentStep < 2) {
+            setCurrentStep(currentStep + 1);
+        } else {
+            // TODO: Save to Firestore
+            router.replace('/(tabs)/planner');
+        }
+    };
+
+    const handleBack = () => {
+        if (currentStep > 0) {
+            setCurrentStep(currentStep - 1);
+        }
+    };
+
+    const renderStep = () => {
+        switch (currentStep) {
+            case 0:
+                return (
+                    <View>
+                        <Text style={{
+                            fontSize: 28,
+                            fontWeight: 'bold',
+                            color: Colors.light.text.primary,
+                            marginBottom: 8,
+                            textAlign: 'center'
+                        }}>
+                            Let's Set Up Your Profile 🌍
+                        </Text>
+                        <Text style={{
+                            fontSize: 16,
+                            color: Colors.light.text.secondary,
+                            marginBottom: 32,
+                            textAlign: 'center'
+                        }}>
+                            Tell us about your dietary preferences
+                        </Text>
+
+                        {/* Diet Type */}
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                            Diet Type
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+                            {dietTypes.map((diet) => (
+                                <TouchableOpacity
+                                    key={diet}
+                                    onPress={() => setDietType(diet)}
+                                    style={{
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 10,
+                                        borderRadius: 20,
+                                        borderWidth: 2,
+                                        borderColor: dietType === diet ? Colors.primary.main : Colors.light.border,
+                                        backgroundColor: dietType === diet ? `${Colors.primary.main}15` : 'white'
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontWeight: '600',
+                                        color: dietType === diet ? Colors.primary.main : Colors.light.text.secondary
+                                    }}>
+                                        {diet}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Allergies */}
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                            Any Allergies? (Optional)
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                            {commonAllergies.map((allergy) => (
+                                <TouchableOpacity
+                                    key={allergy}
+                                    onPress={() => toggleItem(allergy, allergies, setAllergies)}
+                                    style={{
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 10,
+                                        borderRadius: 20,
+                                        borderWidth: 2,
+                                        borderColor: allergies.includes(allergy) ? '#EF4444' : Colors.light.border,
+                                        backgroundColor: allergies.includes(allergy) ? '#FEE2E2' : 'white'
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontWeight: '600',
+                                        color: allergies.includes(allergy) ? '#EF4444' : Colors.light.text.secondary
+                                    }}>
+                                        {allergy}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                );
+
+            case 1:
+                return (
+                    <View>
+                        <Text style={{
+                            fontSize: 28,
+                            fontWeight: 'bold',
+                            color: Colors.light.text.primary,
+                            marginBottom: 8,
+                            textAlign: 'center'
+                        }}>
+                            What's Your Goal? 🎯
+                        </Text>
+                        <Text style={{
+                            fontSize: 16,
+                            color: Colors.light.text.secondary,
+                            marginBottom: 32,
+                            textAlign: 'center'
+                        }}>
+                            We'll customize your meal plans accordingly
+                        </Text>
+
+                        {/* Goal Selection */}
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                            Primary Goal
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+                            {goals.map((g) => (
+                                <TouchableOpacity
+                                    key={g}
+                                    onPress={() => setGoal(g)}
+                                    style={{
+                                        flex: 1,
+                                        minWidth: '45%',
+                                        padding: 16,
+                                        borderRadius: 12,
+                                        borderWidth: 2,
+                                        borderColor: goal === g ? Colors.primary.main : Colors.light.border,
+                                        backgroundColor: goal === g ? `${Colors.primary.main}15` : 'white',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontWeight: '600',
+                                        color: goal === g ? Colors.primary.main : Colors.light.text.secondary,
+                                        textAlign: 'center'
+                                    }}>
+                                        {g}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Daily Calorie Target */}
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
+                            Daily Calorie Target
+                        </Text>
+                        <TextInput
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: 12,
+                                padding: 16,
+                                fontSize: 16,
+                                borderWidth: 1,
+                                borderColor: Colors.light.border
+                            }}
+                            placeholder="2000"
+                            value={targetCalories}
+                            onChangeText={setTargetCalories}
+                            keyboardType="number-pad"
+                        />
+                    </View>
+                );
+
+            case 2:
+                return (
+                    <View>
+                        <Text style={{
+                            fontSize: 28,
+                            fontWeight: 'bold',
+                            color: Colors.light.text.primary,
+                            marginBottom: 8,
+                            textAlign: 'center'
+                        }}>
+                            Meal Preferences 🍽️
+                        </Text>
+                        <Text style={{
+                            fontSize: 16,
+                            color: Colors.light.text.secondary,
+                            marginBottom: 32,
+                            textAlign: 'center'
+                        }}>
+                            How do you like to eat?
+                        </Text>
+
+                        {/* Meals Per Day */}
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                            Meals Per Day
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+                            {[1, 2, 3].map((num) => (
+                                <TouchableOpacity
+                                    key={num}
+                                    onPress={() => setMealsPerDay(num)}
+                                    style={{
+                                        flex: 1,
+                                        padding: 20,
+                                        borderRadius: 12,
+                                        borderWidth: 2,
+                                        borderColor: mealsPerDay === num ? Colors.primary.main : Colors.light.border,
+                                        backgroundColor: mealsPerDay === num ? `${Colors.primary.main}15` : 'white',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontSize: 24,
+                                        fontWeight: '700',
+                                        color: mealsPerDay === num ? Colors.primary.main : Colors.light.text.secondary,
+                                        marginBottom: 4
+                                    }}>
+                                        {num}
+                                    </Text>
+                                    <Text style={{
+                                        fontSize: 12,
+                                        color: mealsPerDay === num ? Colors.primary.main : Colors.light.text.tertiary
+                                    }}>
+                                        {num === 1 ? 'meal' : 'meals'}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Preferred Cuisines */}
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                            Favorite Cuisines
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+                            {cuisineOptions.map((cuisine) => (
+                                <TouchableOpacity
+                                    key={cuisine}
+                                    onPress={() => toggleItem(cuisine, cuisines, setCuisines)}
+                                    style={{
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 10,
+                                        borderRadius: 20,
+                                        borderWidth: 2,
+                                        borderColor: cuisines.includes(cuisine) ? Colors.primary.main : Colors.light.border,
+                                        backgroundColor: cuisines.includes(cuisine) ? `${Colors.primary.main}15` : 'white'
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontWeight: '600',
+                                        color: cuisines.includes(cuisine) ? Colors.primary.main : Colors.light.text.secondary
+                                    }}>
+                                        {cuisine}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Max Cooking Time */}
+                        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                            Maximum Cooking Time
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                            {cookingTimes.map((time) => (
+                                <TouchableOpacity
+                                    key={time}
+                                    onPress={() => setCookingTime(time)}
+                                    style={{
+                                        flex: 1,
+                                        minWidth: '45%',
+                                        padding: 16,
+                                        borderRadius: 12,
+                                        borderWidth: 2,
+                                        borderColor: cookingTime === time ? Colors.secondary.main : Colors.light.border,
+                                        backgroundColor: cookingTime === time ? `${Colors.secondary.main}20` : 'white',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontWeight: '600',
+                                        color: cookingTime === time ? Colors.secondary.main : Colors.light.text.secondary
+                                    }}>
+                                        {time}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                );
+
+            default:
+                return null;
         }
     };
 
     return (
-        <View className="flex-1 p-4 justify-center">
-            <Text className="text-2xl font-bold mb-4 text-center">
-                Welcome to GlobalEats! 🌍
-            </Text>
-            <Text className="text-center mb-4">
-                Let's set up your profile
-            </Text>
+        <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+            {/* Progress Bar */}
+            <View style={{
+                paddingTop: insets.top + 16,
+                paddingHorizontal: 24,
+                paddingBottom: 16
+            }}>
+                <View style={{
+                    flexDirection: 'row',
+                    gap: 8,
+                    marginBottom: 8
+                }}>
+                    {[0, 1, 2].map((step) => (
+                        <View
+                            key={step}
+                            style={{
+                                flex: 1,
+                                height: 4,
+                                borderRadius: 2,
+                                backgroundColor: step <= currentStep ? Colors.primary.main : Colors.light.border
+                            }}
+                        />
+                    ))}
+                </View>
+                <Text style={{
+                    fontSize: 12,
+                    color: Colors.light.text.secondary,
+                    textAlign: 'center'
+                }}>
+                    Step {currentStep + 1} of 3
+                </Text>
+            </View>
 
-            {/* TODO: Add multi-step form for:
-                - Dietary preferences (vegetarian, vegan, etc.)
-                - Allergies
-                - Budget preferences
-                - Meal planning goals
-            */}
+            {/* Content */}
+            <ScrollView
+                contentContainerStyle={{
+                    padding: 24,
+                    paddingBottom: insets.bottom + 100
+                }}
+            >
+                {renderStep()}
+            </ScrollView>
 
-            <Button
-                title={isSubmitting ? "Setting up..." : "Get Started"}
-                onPress={handleComplete}
-                disabled={isSubmitting}
-            />
+            {/* Bottom Navigation */}
+            <View style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: 'white',
+                padding: 24,
+                paddingBottom: 24 + insets.bottom,
+                borderTopWidth: 1,
+                borderTopColor: Colors.light.border,
+                flexDirection: 'row',
+                gap: 12
+            }}>
+                {currentStep > 0 && (
+                    <TouchableOpacity
+                        style={{
+                            flex: 1,
+                            backgroundColor: Colors.light.surface,
+                            paddingVertical: 14,
+                            borderRadius: 12,
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: Colors.light.border
+                        }}
+                        onPress={handleBack}
+                    >
+                        <Text style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: Colors.light.text.secondary
+                        }}>
+                            Back
+                        </Text>
+                    </TouchableOpacity>
+                )}
 
-            {isSubmitting && (
-                <ActivityIndicator
-                    size="large"
-                    color="#0000ff"
-                    style={{ marginTop: 20 }}
-                />
-            )}
+                <TouchableOpacity
+                    style={{
+                        flex: currentStep > 0 ? 2 : 1,
+                        backgroundColor: Colors.primary.main,
+                        paddingVertical: 14,
+                        borderRadius: 12,
+                        alignItems: 'center'
+                    }}
+                    onPress={handleNext}
+                >
+                    <Text style={{
+                        fontSize: 16,
+                        fontWeight: '600',
+                        color: 'white'
+                    }}>
+                        {currentStep === 2 ? 'Get Started' : 'Next'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
