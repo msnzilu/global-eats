@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
 import { Colors } from '@/utils/constants';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RecipeType = 'my-recipes' | 'discover';
@@ -105,7 +105,7 @@ export default function Recipes() {
                 shadowRadius: 8,
                 elevation: 3
             }}
-            onPress={() => router.push(`/recipes/${recipe.id}`)}
+            onPress={() => router.push("/recipe-detail")}
             activeOpacity={0.7}
         >
             {/* Recipe Image */}

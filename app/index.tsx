@@ -1,18 +1,17 @@
-import { View, Text, ActivityIndicator } from 'react-native';
+import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Colors } from '@/utils/constants';
+import { ActivityIndicator, Text, View } from 'react-native';
 
-export default function Home() {
+export default function Index() {
     const router = useRouter();
 
     useEffect(() => {
         // Simple splash screen with delay, then navigate to login
         const timer = setTimeout(() => {
             router.replace('/login');
-        }, 2000); // Show splash for 2 seconds
+        }, 1500);
 
-        // Cleanup timer
         return () => clearTimeout(timer);
     }, []);
 

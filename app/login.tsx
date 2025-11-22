@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Colors } from '@/utils/constants';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function Login() {
     const router = useRouter();
@@ -10,7 +10,7 @@ export default function Login() {
 
     const handleLogin = () => {
         // TODO: Implement Firebase authentication
-        router.push('/home');
+        router.push('/(tabs)/planner');
     };
 
     return (
@@ -136,7 +136,7 @@ export default function Login() {
                             />
                         </View>
 
-                        {/* Login Button - Primary Emerald Green */}
+                        {/* Login Button */}
                         <TouchableOpacity
                             style={{
                                 width: '100%',
@@ -199,7 +199,7 @@ export default function Login() {
                             />
                         </View>
 
-                        {/* Google Sign In - Secondary Amber */}
+                        {/* Google Sign In */}
                         <TouchableOpacity
                             style={{
                                 width: '100%',
