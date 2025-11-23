@@ -9,7 +9,7 @@ export default function Index() {
     useEffect(() => {
         // Simple splash screen with delay, then navigate to login
         const timer = setTimeout(() => {
-            router.replace('/login');
+            router.replace('/auth/login');
         }, 1500);
 
         return () => clearTimeout(timer);

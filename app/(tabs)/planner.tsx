@@ -229,7 +229,7 @@ export default function Planner() {
                 contentContainerStyle={{
                     paddingHorizontal: 24,
                     paddingTop: 16,
-                    paddingBottom: 100 + insets.bottom
+                    paddingBottom: 80
                 }}
                 showsVerticalScrollIndicator={false}
             >
@@ -248,7 +248,7 @@ export default function Planner() {
                             shadowRadius: 8,
                             elevation: 3
                         }}
-                        onPress={() => router.push('/meal-detail')}
+                        onPress={() => router.push('/recipes/recipe-detail')}
                         activeOpacity={0.7}
                     >
                         {/* Meal Type Badge */}
@@ -409,9 +409,8 @@ export default function Planner() {
                 left: 0,
                 right: 0,
                 backgroundColor: 'white',
-                paddingHorizontal: 24,
-                paddingTop: 12,
-                paddingBottom: 12 + insets.bottom,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
                 borderTopWidth: 1,
                 borderTopColor: Colors.light.border,
                 flexDirection: 'row',
@@ -427,7 +426,7 @@ export default function Planner() {
                         borderWidth: 1,
                         borderColor: Colors.light.border
                     }}
-                    onPress={() => router.push('/shopping-list')}
+                    onPress={() => router.push('/meal-plans/shopping-list')}
                 >
                     <Ionicons name="cart-outline" size={20} color={Colors.primary.main} />
                     <Text style={{
@@ -446,9 +445,10 @@ export default function Planner() {
                         backgroundColor: Colors.primary.main,
                         paddingVertical: 12,
                         borderRadius: 10,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}
-                    onPress={() => router.push('/generate-plan')}
+                    onPress={() => router.push('/meal-plans/generate-plan')}
                 >
                     <Text style={{
                         fontSize: 14,

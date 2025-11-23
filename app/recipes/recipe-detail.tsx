@@ -204,7 +204,8 @@ export default function RecipeDetail() {
                     backgroundColor: 'white',
                     marginHorizontal: 24,
                     borderRadius: 16,
-                    padding: 16
+                    padding: 16,
+                    marginBottom: 16
                 }}>
                     <Text style={{
                         fontSize: 16,
@@ -222,9 +223,56 @@ export default function RecipeDetail() {
                         {recipe.instructions}
                     </Text>
                 </View>
+
+                {/* Action Buttons */}
+                <View style={{ paddingHorizontal: 24, paddingBottom: 24, gap: 12 }}>
+                    <TouchableOpacity
+                        onPress={() => router.push('/recipes/cooking-timer')}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: Colors.primary.main,
+                            paddingVertical: 16,
+                            borderRadius: 12,
+                            gap: 8
+                        }}
+                    >
+                        <Ionicons name="timer-outline" size={24} color="white" />
+                        <Text style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: 'white'
+                        }}>
+                            Start Cooking Timer
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => router.push('/recipes/swap-meal')}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: Colors.secondary.main,
+                            paddingVertical: 16,
+                            borderRadius: 12,
+                            gap: 8
+                        }}
+                    >
+                        <Ionicons name="swap-horizontal" size={24} color="white" />
+                        <Text style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: 'white'
+                        }}>
+                            Swap This Meal
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
 
-            {/* Action Button */}
+            {/* Bottom Action Button */}
             <View style={{
                 position: 'absolute',
                 bottom: 0,

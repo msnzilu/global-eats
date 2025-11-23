@@ -105,7 +105,7 @@ export default function Recipes() {
                 shadowRadius: 8,
                 elevation: 3
             }}
-            onPress={() => router.push("/recipe-detail")}
+            onPress={() => router.push("/recipes/recipe-detail")}
             activeOpacity={0.7}
         >
             {/* Recipe Image */}

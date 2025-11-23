@@ -1,16 +1,69 @@
+import { useAuth } from '@/hooks/useAuth';
+import { isValidEmail, passwordsMatch, registerWithEmail, validatePassword } from '@/services/firebase/auth';
 import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function Login() {
+export default function Signup() {
     const router = useRouter();
+    const { user } = useAuth();
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleLogin = () => {
-        // TODO: Implement Firebase authentication
-        router.push('/(tabs)/planner');
+    useEffect(() => {
+        if (user) router.replace('/onboarding');
+    }, [user]);
+
+    const handleSignup = async () => {
+        setError('');
+
+        if (!name || !email || !password || !confirmPassword) {
+            setError('Please fill in all fields');
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setError('Please enter a valid email address');
+            return;
+        }
+
+        if (!passwordsMatch(password, confirmPassword)) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            setError(passwordError);
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const response = await registerWithEmail(email, password, name);
+            console.log("response:", response);
+
+            if (response.success && response.user) {
+                Alert.alert(
+                    '🎉 Welcome to GlobalEats!',
+                    `Your account has been created successfully, ${name}!`,
+                    [{ text: 'Get Started', onPress: () => router.replace('/onboarding') }]
+                );
+            } else {
+                setError(response.error || 'Signup failed. Please try again.');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred. Please try again.');
+            console.error('Signup error:', err);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -58,7 +111,7 @@ export default function Login() {
                         </Text>
                     </View>
 
-                    {/* Login Form */}
+                    {/* Signup Form */}
                     <View style={{ width: '100%', maxWidth: 384 }}>
                         <Text
                             style={{
@@ -68,8 +121,40 @@ export default function Login() {
                                 color: Colors.light.text.primary
                             }}
                         >
-                            Welcome Back
+                            Create Account
                         </Text>
+
+                        {/* Name Input */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text
+                                style={{
+                                    fontSize: 14,
+                                    fontWeight: '500',
+                                    marginBottom: 8,
+                                    color: Colors.light.text.secondary
+                                }}
+                            >
+                                Full Name
+                            </Text>
+                            <TextInput
+                                style={{
+                                    width: '100%',
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 12,
+                                    borderRadius: 8,
+                                    backgroundColor: Colors.light.surface,
+                                    borderWidth: 1,
+                                    borderColor: Colors.light.border,
+                                    color: Colors.light.text.primary,
+                                }}
+                                placeholder="John Doe"
+                                placeholderTextColor={Colors.light.text.tertiary}
+                                value={name}
+                                onChangeText={setName}
+                                autoCapitalize="words"
+                                autoComplete="name"
+                            />
+                        </View>
 
                         {/* Email Input */}
                         <View style={{ marginBottom: 16 }}>
@@ -105,7 +190,7 @@ export default function Login() {
                         </View>
 
                         {/* Password Input */}
-                        <View style={{ marginBottom: 24 }}>
+                        <View style={{ marginBottom: 16 }}>
                             <Text
                                 style={{
                                     fontSize: 14,
@@ -127,16 +212,48 @@ export default function Login() {
                                     borderColor: Colors.light.border,
                                     color: Colors.light.text.primary,
                                 }}
-                                placeholder="Enter your password"
+                                placeholder="Create a password"
                                 placeholderTextColor={Colors.light.text.tertiary}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry
-                                autoComplete="password"
+                                autoComplete="password-new"
                             />
                         </View>
 
-                        {/* Login Button */}
+                        {/* Confirm Password Input */}
+                        <View style={{ marginBottom: 24 }}>
+                            <Text
+                                style={{
+                                    fontSize: 14,
+                                    fontWeight: '500',
+                                    marginBottom: 8,
+                                    color: Colors.light.text.secondary
+                                }}
+                            >
+                                Confirm Password
+                            </Text>
+                            <TextInput
+                                style={{
+                                    width: '100%',
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 12,
+                                    borderRadius: 8,
+                                    backgroundColor: Colors.light.surface,
+                                    borderWidth: 1,
+                                    borderColor: Colors.light.border,
+                                    color: Colors.light.text.primary,
+                                }}
+                                placeholder="Confirm your password"
+                                placeholderTextColor={Colors.light.text.tertiary}
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                                secureTextEntry
+                                autoComplete="password-new"
+                            />
+                        </View>
+
+                        {/* Sign Up Button - Primary Emerald Green */}
                         <TouchableOpacity
                             style={{
                                 width: '100%',
@@ -147,28 +264,11 @@ export default function Login() {
                                 backgroundColor: Colors.primary.main,
                                 minHeight: 48,
                             }}
-                            onPress={handleLogin}
+                            onPress={handleSignup}
                             activeOpacity={0.8}
                         >
                             <Text style={{ color: 'white', fontSize: 18, fontWeight: '600', textAlign: 'center' }}>
-                                Log In
-                            </Text>
-                        </TouchableOpacity>
-
-                        {/* Forgot Password */}
-                        <TouchableOpacity
-                            style={{ marginBottom: 24, minHeight: 44 }}
-                            onPress={() => router.push('/forgot-password')}
-                        >
-                            <Text
-                                style={{
-                                    textAlign: 'center',
-                                    fontSize: 16,
-                                    fontWeight: '500',
-                                    color: Colors.primary.dark
-                                }}
-                            >
-                                Forgot Password?
+                                Sign Up
                             </Text>
                         </TouchableOpacity>
 
@@ -199,7 +299,7 @@ export default function Login() {
                             />
                         </View>
 
-                        {/* Google Sign In */}
+                        {/* Google Sign Up - Secondary Amber */}
                         <TouchableOpacity
                             style={{
                                 width: '100%',
@@ -217,7 +317,7 @@ export default function Login() {
                             }}
                             onPress={() => {
                                 // TODO: Implement Google OAuth
-                                console.log('Google Sign In');
+                                console.log('Google Sign Up');
                             }}
                             activeOpacity={0.8}
                         >
@@ -233,7 +333,27 @@ export default function Login() {
                             </Text>
                         </TouchableOpacity>
 
-                        {/* Sign Up Link */}
+                        {/* Terms and Privacy */}
+                        <Text
+                            style={{
+                                fontSize: 12,
+                                textAlign: 'center',
+                                marginBottom: 16,
+                                color: Colors.light.text.tertiary,
+                                lineHeight: 18
+                            }}
+                        >
+                            By signing up, you agree to our{' '}
+                            <Text style={{ color: Colors.primary.dark, fontWeight: '500' }}>
+                                Terms of Service
+                            </Text>
+                            {' '}and{' '}
+                            <Text style={{ color: Colors.primary.dark, fontWeight: '500' }}>
+                                Privacy Policy
+                            </Text>
+                        </Text>
+
+                        {/* Login Link */}
                         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                             <Text
                                 style={{
@@ -241,11 +361,11 @@ export default function Login() {
                                     color: Colors.light.text.secondary
                                 }}
                             >
-                                Don't have an account?{' '}
+                                Already have an account?{' '}
                             </Text>
                             <TouchableOpacity
                                 style={{ minHeight: 44, justifyContent: 'center' }}
-                                onPress={() => router.push('/signup')}
+                                onPress={() => router.push('/auth/login')}
                             >
                                 <Text
                                     style={{
@@ -254,7 +374,7 @@ export default function Login() {
                                         color: Colors.secondary.main
                                     }}
                                 >
-                                    Sign Up
+                                    Log In
                                 </Text>
                             </TouchableOpacity>
                         </View>

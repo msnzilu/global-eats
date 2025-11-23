@@ -1,9 +1,101 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { auth, db } from '@/services/firebase/config';
 import { Colors } from '@/utils/constants';
+import { useRouter } from 'expo-router';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function Profile() {
     const router = useRouter();
+    const [userName, setUserName] = useState('');
+    const [userEmail, setUserEmail] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [userInitials, setUserInitials] = useState('');
+
+    useEffect(() => {
+        loadUserData();
+    }, []);
+
+    const loadUserData = async () => {
+        try {
+            const user = auth.currentUser;
+
+            if (!user) {
+                console.log('❌ No user logged in, redirecting to login');
+                router.replace('/auth/login');
+                return;
+            }
+
+            console.log('📥 Loading profile data for:', user.uid);
+
+            // Set email from Auth immediately
+            setUserEmail(user.email || '');
+
+            // Get name from Firestore first, fallback to Auth
+            try {
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const name = userData.name || user.displayName || 'User';
+                    setUserName(name);
+                    setUserInitials(getInitials(name));
+                    console.log('✅ Profile data loaded from Firestore');
+                } else {
+                    // Fallback to Auth data
+                    const name = user.displayName || 'User';
+                    setUserName(name);
+                    setUserInitials(getInitials(name));
+                    console.log('⚠️ Using Auth data only');
+                }
+            } catch (firestoreError) {
+                console.warn('⚠️ Firestore read failed, using Auth data:', firestoreError);
+                const name = user.displayName || 'User';
+                setUserName(name);
+                setUserInitials(getInitials(name));
+            }
+        } catch (error) {
+            console.error('❌ Error loading profile:', error);
+            Alert.alert('Error', 'Failed to load profile data');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const getInitials = (name: string): string => {
+        if (!name) return 'U';
+        const parts = name.trim().split(' ');
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    };
+
+    const handleLogout = async () => {
+        Alert.alert(
+            'Logout',
+            'Are you sure you want to logout?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            console.log('🚪 Logging out...');
+                            await signOut(auth);
+                            console.log('✅ Logged out successfully');
+                            router.replace('/auth/login');
+                        } catch (error) {
+                            console.error('❌ Logout error:', error);
+                            Alert.alert('Error', 'Failed to logout. Please try again.');
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     const profileSections = [
         {
@@ -32,6 +124,17 @@ export default function Profile() {
         }
     ];
 
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={Colors.primary.main} />
+                <Text style={{ marginTop: 16, color: Colors.light.text.secondary }}>
+                    Loading profile...
+                </Text>
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={{ flex: 1, backgroundColor: Colors.light.background }}>
             {/* Header */}
@@ -48,18 +151,22 @@ export default function Profile() {
                     width: 100,
                     height: 100,
                     borderRadius: 50,
-                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    backgroundColor: 'rgba(255,255,255,0.3)',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: 16
+                    marginBottom: 16,
+                    borderWidth: 3,
+                    borderColor: 'rgba(255,255,255,0.5)'
                 }}>
-                    <Text style={{ fontSize: 48 }}>👤</Text>
+                    <Text style={{ fontSize: 36, fontWeight: 'bold', color: 'white' }}>
+                        {userInitials || '👤'}
+                    </Text>
                 </View>
                 <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 4 }}>
-                    John Doe
+                    {userName || 'User'}
                 </Text>
                 <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
-                    john.doe@email.com
+                    {userEmail || 'No email'}
                 </Text>
             </View>
 
@@ -191,7 +298,7 @@ export default function Profile() {
                         borderWidth: 1,
                         borderColor: '#FECACA'
                     }}
-                    onPress={() => router.replace('/login')}
+                    onPress={handleLogout}
                     activeOpacity={0.7}
                 >
                     <Text style={{

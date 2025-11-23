@@ -2,7 +2,14 @@ import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    FlatList,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface InventoryItem {
@@ -212,38 +219,53 @@ export default function Inventory() {
             </View>
 
             {/* Category Filter */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginTop: 16 }}
-                contentContainerStyle={{
-                    paddingHorizontal: 24,
-                    gap: 8
-                }}
-            >
-                {categories.map((category) => (
-                    <TouchableOpacity
-                        key={category}
-                        style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 8,
-                            borderRadius: 20,
-                            backgroundColor: selectedCategory === category ? Colors.primary.main : 'white',
-                            borderWidth: 1,
-                            borderColor: selectedCategory === category ? Colors.primary.main : Colors.light.border
-                        }}
-                        onPress={() => setSelectedCategory(category)}
-                    >
-                        <Text style={{
-                            fontSize: 14,
-                            fontWeight: '600',
-                            color: selectedCategory === category ? 'white' : Colors.light.text.secondary
-                        }}>
-                            {category}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            <View style={{
+                marginTop: 16,
+                marginBottom: 12,
+                height: 50
+            }}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{
+                        paddingHorizontal: 24,
+                        alignItems: 'center',
+                        height: 50
+                    }}
+                >
+                    {categories.map((category, index) => (
+                        <TouchableOpacity
+                            key={category}
+                            style={{
+                                paddingHorizontal: 20,
+                                paddingVertical: 10,
+                                borderRadius: 22,
+                                backgroundColor: selectedCategory === category ? Colors.primary.main : 'white',
+                                borderWidth: 1.5,
+                                borderColor: selectedCategory === category ? Colors.primary.main : Colors.light.border,
+                                marginRight: 12,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 3,
+                                elevation: 2,
+                                height: 44,
+                                justifyContent: 'center'
+                            }}
+                            onPress={() => setSelectedCategory(category)}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={{
+                                fontSize: 15,
+                                fontWeight: '600',
+                                color: selectedCategory === category ? 'white' : Colors.light.text.primary
+                            }}>
+                                {category}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
 
             {/* Items List */}
             <FlatList
@@ -306,7 +328,3 @@ export default function Inventory() {
         </View>
     );
 }
-
-// Need to add ScrollView import
-import { ScrollView } from 'react-native';
-
