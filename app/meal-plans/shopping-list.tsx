@@ -1,56 +1,150 @@
+import { useShoppingList } from '@/hooks/useShoppingList';
+import { auth } from '@/services/firebase/config';
+import { createShoppingList } from '@/services/firebase/firestore';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-interface ShoppingItem {
-    id: string;
-    name: string;
-    quantity: number;
-    unit: string;
-    category: string;
-    isChecked: boolean;
-}
 
 export default function ShoppingList() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const {
+        shoppingList,
+        loading,
+        error,
+        toggleItem,
+        addCheckedToInventory,
+        clearCheckedItems
+    } = useShoppingList();
+    const [creating, setCreating] = useState(false);
 
-    // Mock data - will be replaced with actual shopping list from Firestore
-    const [items, setItems] = useState<ShoppingItem[]>([
-        { id: '1', name: 'Chicken Breast', quantity: 1000, unit: 'g', category: 'Protein', isChecked: false },
-        { id: '2', name: 'Tomatoes', quantity: 500, unit: 'g', category: 'Produce', isChecked: false },
-        { id: '3', name: 'Yogurt', quantity: 400, unit: 'ml', category: 'Dairy', isChecked: true },
-        { id: '4', name: 'Rice', quantity: 2, unit: 'kg', category: 'Grains', isChecked: false },
-        { id: '5', name: 'Onions', quantity: 3, unit: 'pieces', category: 'Produce', isChecked: false },
-        { id: '6', name: 'Garlic', quantity: 1, unit: 'bulb', category: 'Produce', isChecked: false },
-    ]);
+    const currentUser = auth.currentUser;
 
-    const toggleItem = (id: string) => {
-        setItems(prev => prev.map(item =>
-            item.id === id ? { ...item, isChecked: !item.isChecked } : item
-        ));
+    const handleToggleItem = async (itemId: string) => {
+        try {
+            await toggleItem(itemId);
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to update item');
+        }
     };
 
-    const addCheckedToInventory = () => {
-        // TODO: Implement adding checked items to inventory
-        const checkedItems = items.filter(item => item.isChecked);
-        console.log('Adding to inventory:', checkedItems);
+    const handleAddToInventory = async () => {
+        try {
+            await addCheckedToInventory();
+            Alert.alert('Success', 'Items added to inventory successfully');
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to add items to inventory');
+        }
     };
 
-    const clearChecked = () => {
-        setItems(prev => prev.filter(item => !item.isChecked));
+    const handleClearChecked = async () => {
+        Alert.alert(
+            'Clear Checked Items',
+            'Are you sure you want to remove all checked items from the list?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Clear',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await clearCheckedItems();
+                        } catch (err: any) {
+                            Alert.alert('Error', err.message || 'Failed to clear items');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
+    const createSampleList = async () => {
+        if (!currentUser) {
+            Alert.alert('Error', 'You must be logged in to create a shopping list');
+            return;
+        }
+
+        setCreating(true);
+        try {
+            await createShoppingList(currentUser.uid, {
+                mealPlanId: 'sample',
+                items: [
+                    {
+                        id: `item_${Date.now()}_1`,
+                        name: 'Chicken Breast',
+                        quantity: 1000,
+                        unit: 'g',
+                        category: 'Protein',
+                        isChecked: false,
+                        fromRecipes: []
+                    },
+                    {
+                        id: `item_${Date.now()}_2`,
+                        name: 'Tomatoes',
+                        quantity: 500,
+                        unit: 'g',
+                        category: 'Produce',
+                        isChecked: false,
+                        fromRecipes: []
+                    },
+                    {
+                        id: `item_${Date.now()}_3`,
+                        name: 'Rice',
+                        quantity: 2,
+                        unit: 'kg',
+                        category: 'Grains',
+                        isChecked: false,
+                        fromRecipes: []
+                    },
+                    {
+                        id: `item_${Date.now()}_4`,
+                        name: 'Yogurt',
+                        quantity: 400,
+                        unit: 'ml',
+                        category: 'Dairy',
+                        isChecked: false,
+                        fromRecipes: []
+                    },
+                    {
+                        id: `item_${Date.now()}_5`,
+                        name: 'Onions',
+                        quantity: 3,
+                        unit: 'pieces',
+                        category: 'Produce',
+                        isChecked: false,
+                        fromRecipes: []
+                    },
+                    {
+                        id: `item_${Date.now()}_6`,
+                        name: 'Olive Oil',
+                        quantity: 250,
+                        unit: 'ml',
+                        category: 'Oils',
+                        isChecked: false,
+                        fromRecipes: []
+                    }
+                ],
+                isActive: true
+            });
+            Alert.alert('Success', 'Sample shopping list created!');
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to create shopping list');
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const items = shoppingList?.items || [];
     const groupedItems = items.reduce((acc, item) => {
         if (!acc[item.category]) {
             acc[item.category] = [];
         }
         acc[item.category].push(item);
         return acc;
-    }, {} as Record<string, ShoppingItem[]>);
+    }, {} as Record<string, typeof items>);
 
     const categories = Object.keys(groupedItems).sort();
     const checkedCount = items.filter(item => item.isChecked).length;
@@ -90,104 +184,156 @@ export default function ShoppingList() {
                 </View>
             </View>
 
-            <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{
-                    paddingHorizontal: 24,
-                    paddingTop: 16,
-                    paddingBottom: checkedCount > 0 ? 180 + insets.bottom : 100 + insets.bottom
-                }}
-            >
-                {categories.map((category) => (
-                    <View key={category} style={{ marginBottom: 24 }}>
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: 'bold',
-                            color: Colors.light.text.primary,
-                            marginBottom: 12,
-                            textTransform: 'uppercase',
-                            letterSpacing: 0.5
-                        }}>
-                            {category}
-                        </Text>
-                        {groupedItems[category]
-                            .sort((a, b) => Number(a.isChecked) - Number(b.isChecked))
-                            .map((item) => (
-                                <TouchableOpacity
-                                    key={item.id}
-                                    style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        backgroundColor: 'white',
-                                        padding: 16,
-                                        borderRadius: 12,
-                                        marginBottom: 8,
-                                        opacity: item.isChecked ? 0.6 : 1
-                                    }}
-                                    onPress={() => toggleItem(item.id)}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={{
-                                        width: 24,
-                                        height: 24,
-                                        borderRadius: 12,
-                                        borderWidth: 2,
-                                        borderColor: item.isChecked ? Colors.secondary.main : Colors.light.border,
-                                        backgroundColor: item.isChecked ? Colors.secondary.main : 'transparent',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        marginRight: 12
-                                    }}>
-                                        {item.isChecked && (
-                                            <Ionicons name="checkmark" size={16} color="white" />
-                                        )}
-                                    </View>
-                                    <Text style={{
-                                        flex: 1,
-                                        fontSize: 16,
-                                        color: Colors.light.text.primary,
-                                        textDecorationLine: item.isChecked ? 'line-through' : 'none'
-                                    }}>
-                                        {item.name}
-                                    </Text>
-                                    <Text style={{
-                                        fontSize: 14,
-                                        color: Colors.light.text.secondary,
-                                        fontWeight: '500'
-                                    }}>
-                                        {item.quantity} {item.unit}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                    </View>
-                ))}
+            {/* Error Message */}
+            {error && (
+                <View style={{
+                    backgroundColor: '#FEE2E2',
+                    padding: 12,
+                    marginHorizontal: 24,
+                    marginTop: 16,
+                    borderRadius: 8,
+                    borderLeftWidth: 4,
+                    borderLeftColor: '#EF4444'
+                }}>
+                    <Text style={{ color: '#991B1B', fontSize: 14 }}>
+                        {error}
+                    </Text>
+                </View>
+            )}
 
-                {items.length === 0 && (
-                    <View style={{
-                        alignItems: 'center',
-                        paddingVertical: 60
-                    }}>
-                        <Ionicons name="cart-outline" size={64} color={Colors.light.text.tertiary} />
-                        <Text style={{
-                            fontSize: 18,
-                            fontWeight: '600',
-                            color: Colors.light.text.primary,
-                            marginTop: 16,
-                            marginBottom: 8
+            {/* Loading Indicator */}
+            {loading ? (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
+                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <Text style={{ marginTop: 16, fontSize: 16, color: Colors.light.text.secondary }}>
+                        Loading shopping list...
+                    </Text>
+                </View>
+            ) : (
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{
+                        paddingHorizontal: 24,
+                        paddingTop: 16,
+                        paddingBottom: checkedCount > 0 ? 180 + insets.bottom : 100 + insets.bottom
+                    }}
+                >
+                    {categories.map((category) => (
+                        <View key={category} style={{ marginBottom: 24 }}>
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: 'bold',
+                                color: Colors.light.text.primary,
+                                marginBottom: 12,
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.5
+                            }}>
+                                {category}
+                            </Text>
+                            {groupedItems[category]
+                                .sort((a, b) => Number(a.isChecked) - Number(b.isChecked))
+                                .map((item) => (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={{
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            backgroundColor: 'white',
+                                            padding: 16,
+                                            borderRadius: 12,
+                                            marginBottom: 8,
+                                            opacity: item.isChecked ? 0.6 : 1
+                                        }}
+                                        onPress={() => handleToggleItem(item.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={{
+                                            width: 24,
+                                            height: 24,
+                                            borderRadius: 12,
+                                            borderWidth: 2,
+                                            borderColor: item.isChecked ? Colors.secondary.main : Colors.light.border,
+                                            backgroundColor: item.isChecked ? Colors.secondary.main : 'transparent',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: 12
+                                        }}>
+                                            {item.isChecked && (
+                                                <Ionicons name="checkmark" size={16} color="white" />
+                                            )}
+                                        </View>
+                                        <Text style={{
+                                            flex: 1,
+                                            fontSize: 16,
+                                            color: Colors.light.text.primary,
+                                            textDecorationLine: item.isChecked ? 'line-through' : 'none'
+                                        }}>
+                                            {item.name}
+                                        </Text>
+                                        <Text style={{
+                                            fontSize: 14,
+                                            color: Colors.light.text.secondary,
+                                            fontWeight: '500'
+                                        }}>
+                                            {item.quantity} {item.unit}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                        </View>
+                    ))}
+
+                    {items.length === 0 && !loading && (
+                        <View style={{
+                            alignItems: 'center',
+                            paddingVertical: 60
                         }}>
-                            No Items Yet
-                        </Text>
-                        <Text style={{
-                            fontSize: 14,
-                            color: Colors.light.text.secondary,
-                            textAlign: 'center',
-                            paddingHorizontal: 40
-                        }}>
-                            Generate a meal plan to create your shopping list
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
+                            <Ionicons name="cart-outline" size={64} color={Colors.light.text.tertiary} />
+                            <Text style={{
+                                fontSize: 18,
+                                fontWeight: '600',
+                                color: Colors.light.text.primary,
+                                marginTop: 16,
+                                marginBottom: 8
+                            }}>
+                                No Items Yet
+                            </Text>
+                            <Text style={{
+                                fontSize: 14,
+                                color: Colors.light.text.secondary,
+                                textAlign: 'center',
+                                paddingHorizontal: 40,
+                                marginBottom: 24
+                            }}>
+                                {shoppingList ? 'Your shopping list is empty' : 'Create a shopping list to get started'}
+                            </Text>
+                            {!shoppingList && (
+                                <TouchableOpacity
+                                    style={{
+                                        backgroundColor: Colors.primary.main,
+                                        paddingHorizontal: 24,
+                                        paddingVertical: 12,
+                                        borderRadius: 12
+                                    }}
+                                    onPress={createSampleList}
+                                    disabled={creating}
+                                >
+                                    {creating ? (
+                                        <ActivityIndicator color="white" />
+                                    ) : (
+                                        <Text style={{
+                                            color: 'white',
+                                            fontSize: 16,
+                                            fontWeight: '600'
+                                        }}>
+                                            Create Sample List
+                                        </Text>
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+                </ScrollView>
+            )}
 
             {/* Action Buttons */}
             {checkedCount > 0 && (
@@ -211,7 +357,7 @@ export default function ShoppingList() {
                             alignItems: 'center',
                             marginBottom: 12
                         }}
-                        onPress={addCheckedToInventory}
+                        onPress={handleAddToInventory}
                     >
                         <Text style={{
                             fontSize: 16,
@@ -230,7 +376,7 @@ export default function ShoppingList() {
                             borderWidth: 1,
                             borderColor: Colors.light.border
                         }}
-                        onPress={clearChecked}
+                        onPress={handleClearChecked}
                     >
                         <Text style={{
                             fontSize: 16,

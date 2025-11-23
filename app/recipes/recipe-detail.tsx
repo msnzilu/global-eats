@@ -1,45 +1,151 @@
+import { useRecipes } from '@/hooks/useRecipes';
+import { auth } from '@/services/firebase/config';
+import { getRecipeById } from '@/services/firebase/firestore';
+import { Recipe } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function RecipeDetail() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
+    const { deleteRecipe } = useRecipes();
 
-    // Mock data - will be replaced with actual recipe data
-    const recipe = {
-        id: '1',
-        name: 'Mediterranean Quinoa Bowl',
-        source: 'custom', // 'custom' or 'spoonacular'
-        cuisine: 'Mediterranean',
-        servings: 2,
-        prepTime: 15,
-        cookTime: 20,
-        calories: 380,
-        protein: 18,
-        carbs: 45,
-        fat: 15,
-        ingredients: [
-            { name: 'Quinoa', amount: 200, unit: 'g' },
-            { name: 'Cherry Tomatoes', amount: 150, unit: 'g' },
-            { name: 'Cucumber', amount: 1, unit: 'piece' },
-            { name: 'Feta Cheese', amount: 100, unit: 'g' },
-            { name: 'Olive Oil', amount: 2, unit: 'tbsp' },
-            { name: 'Lemon Juice', amount: 1, unit: 'tbsp' },
-        ],
-        instructions: `1. Cook quinoa according to package instructions
-2. Dice tomatoes and cucumber
-3. Crumble feta cheese
-4. Mix all ingredients in a bowl
-5. Drizzle with olive oil and lemon juice
-6. Season with salt and pepper to taste`,
-        difficulty: 'Easy'
+    const [recipe, setRecipe] = useState<Recipe | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const recipeId = params.id as string;
+    const currentUser = auth.currentUser;
+
+    useEffect(() => {
+        if (!recipeId) {
+            setError('No recipe ID provided');
+            setLoading(false);
+            return;
+        }
+
+        const fetchRecipe = async () => {
+            try {
+                setLoading(true);
+                const data = await getRecipeById(recipeId);
+                if (data) {
+                    setRecipe(data);
+                } else {
+                    setError('Recipe not found');
+                }
+            } catch (err: any) {
+                setError(err.message || 'Failed to load recipe');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecipe();
+    }, [recipeId]);
+
+    const handleDelete = () => {
+        if (!recipe) return;
+
+        Alert.alert(
+            'Delete Recipe',
+            `Are you sure you want to delete "${recipe.name}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteRecipe(recipe.id);
+                            Alert.alert('Success', 'Recipe deleted successfully', [
+                                { text: 'OK', onPress: () => router.back() }
+                            ]);
+                        } catch (err: any) {
+                            Alert.alert('Error', err.message || 'Failed to delete recipe');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
+    if (loading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+                <View style={{
+                    backgroundColor: Colors.primary.main,
+                    paddingTop: insets.top + 16,
+                    paddingBottom: 20,
+                    paddingHorizontal: 24,
+                    flexDirection: 'row',
+                    alignItems: 'center'
+                }}>
+                    <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'white' }}>
+                        Recipe Details
+                    </Text>
+                </View>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <Text style={{ marginTop: 16, fontSize: 16, color: Colors.light.text.secondary }}>
+                        Loading recipe...
+                    </Text>
+                </View>
+            </View>
+        );
+    }
+
+    if (error || !recipe) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+                <View style={{
+                    backgroundColor: Colors.primary.main,
+                    paddingTop: insets.top + 16,
+                    paddingBottom: 20,
+                    paddingHorizontal: 24,
+                    flexDirection: 'row',
+                    alignItems: 'center'
+                }}>
+                    <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'white' }}>
+                        Recipe Details
+                    </Text>
+                </View>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                    <Ionicons name="alert-circle-outline" size={64} color={Colors.light.text.tertiary} />
+                    <Text style={{ marginTop: 16, fontSize: 18, fontWeight: '600', color: Colors.light.text.primary }}>
+                        {error || 'Recipe not found'}
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{
+                            marginTop: 24,
+                            backgroundColor: Colors.primary.main,
+                            paddingHorizontal: 24,
+                            paddingVertical: 12,
+                            borderRadius: 12
+                        }}
+                    >
+                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                            Go Back
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
     const isCustom = recipe.source === 'custom';
+    const isOwner = currentUser && recipe.userId === currentUser.uid;
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -114,8 +220,8 @@ export default function RecipeDetail() {
                     paddingVertical: 16,
                     gap: 12
                 }}>
-                    <InfoCard icon="time-outline" label="Prep" value={`${recipe.prepTime} min`} />
-                    <InfoCard icon="flame-outline" label="Cook" value={`${recipe.cookTime} min`} />
+                    <InfoCard icon="time-outline" label="Prep" value={`${recipe.prepTimeMin} min`} />
+                    <InfoCard icon="flame-outline" label="Cook" value={`${recipe.cookTimeMin} min`} />
                     <InfoCard icon="people-outline" label="Servings" value={recipe.servings.toString()} />
                     <InfoCard icon="barbell-outline" label="Level" value={recipe.difficulty} />
                 </View>
@@ -140,10 +246,10 @@ export default function RecipeDetail() {
                         flexDirection: 'row',
                         justifyContent: 'space-between'
                     }}>
-                        <NutritionItem label="Calories" value={recipe.calories.toString()} color={Colors.primary.main} />
-                        <NutritionItem label="Protein" value={`${recipe.protein}g`} color={Colors.secondary.main} />
-                        <NutritionItem label="Carbs" value={`${recipe.carbs}g`} color={Colors.primary.dark} />
-                        <NutritionItem label="Fat" value={`${recipe.fat}g`} color="#F59E0B" />
+                        <NutritionItem label="Calories" value={recipe.nutrition.calories.toString()} color={Colors.primary.main} />
+                        <NutritionItem label="Protein" value={`${recipe.nutrition.protein}g`} color={Colors.secondary.main} />
+                        <NutritionItem label="Carbs" value={`${recipe.nutrition.carbs}g`} color={Colors.primary.dark} />
+                        <NutritionItem label="Fat" value={`${recipe.nutrition.fat}g`} color="#F59E0B" />
                     </View>
                 </View>
 
@@ -285,7 +391,7 @@ export default function RecipeDetail() {
                 borderTopWidth: 1,
                 borderTopColor: Colors.light.border
             }}>
-                {isCustom ? (
+                {isCustom && isOwner ? (
                     <TouchableOpacity
                         style={{
                             backgroundColor: '#EF4444',
@@ -293,7 +399,7 @@ export default function RecipeDetail() {
                             borderRadius: 12,
                             alignItems: 'center'
                         }}
-                        onPress={() => {/* TODO: Implement delete */ }}
+                        onPress={handleDelete}
                     >
                         <Text style={{
                             fontSize: 16,

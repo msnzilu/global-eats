@@ -1,96 +1,54 @@
+import { useRecipes } from '@/hooks/useRecipes';
+import { Recipe } from '@/types';
 import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RecipeType = 'my-recipes' | 'discover';
 
-interface Recipe {
-    id: string;
-    name: string;
-    image: string;
-    cuisines: string[];
-    servings: number;
-    prepTimeMin: number;
-    cookTimeMin: number;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    source: 'custom' | 'spoonacular';
-}
-
 export default function Recipes() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { myRecipes, discoveredRecipes, loading, error, deleteRecipe } = useRecipes();
     const [activeTab, setActiveTab] = useState<RecipeType>('my-recipes');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Mock data - replace with actual data from Firestore/Spoonacular
-    const myRecipes: Recipe[] = [
-        {
-            id: '1',
-            name: 'Chicken Tikka Masala',
-            image: 'https://via.placeholder.com/150',
-            cuisines: ['Indian'],
-            servings: 4,
-            prepTimeMin: 20,
-            cookTimeMin: 30,
-            calories: 450,
-            protein: 35,
-            carbs: 25,
-            fat: 20,
-            source: 'custom'
-        },
-        {
-            id: '2',
-            name: 'Mediterranean Quinoa Bowl',
-            image: 'https://via.placeholder.com/150',
-            cuisines: ['Mediterranean'],
-            servings: 2,
-            prepTimeMin: 15,
-            cookTimeMin: 20,
-            calories: 380,
-            protein: 18,
-            carbs: 45,
-            fat: 15,
-            source: 'custom'
-        }
-    ];
-
-    const discoveredRecipes: Recipe[] = [
-        {
-            id: '3',
-            name: 'Thai Green Curry',
-            image: 'https://via.placeholder.com/150',
-            cuisines: ['Thai'],
-            servings: 4,
-            prepTimeMin: 15,
-            cookTimeMin: 25,
-            calories: 420,
-            protein: 28,
-            carbs: 32,
-            fat: 22,
-            source: 'spoonacular'
-        },
-        {
-            id: '4',
-            name: 'Mexican Street Tacos',
-            image: 'https://via.placeholder.com/150',
-            cuisines: ['Mexican'],
-            servings: 6,
-            prepTimeMin: 10,
-            cookTimeMin: 15,
-            calories: 320,
-            protein: 25,
-            carbs: 28,
-            fat: 12,
-            source: 'spoonacular'
-        }
-    ];
-
     const displayedRecipes = activeTab === 'my-recipes' ? myRecipes : discoveredRecipes;
+
+    // Filter recipes based on search query
+    const filteredRecipes = displayedRecipes.filter(recipe => {
+        if (!searchQuery.trim()) return true;
+        const lowerQuery = searchQuery.toLowerCase();
+        return (
+            recipe.name.toLowerCase().includes(lowerQuery) ||
+            recipe.cuisine.toLowerCase().includes(lowerQuery) ||
+            recipe.description?.toLowerCase().includes(lowerQuery)
+        );
+    });
+
+    const handleDeleteRecipe = (recipeId: string, recipeName: string) => {
+        Alert.alert(
+            'Delete Recipe',
+            `Are you sure you want to delete "${recipeName}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteRecipe(recipeId);
+                            Alert.alert('Success', 'Recipe deleted successfully');
+                        } catch (err: any) {
+                            Alert.alert('Error', err.message || 'Failed to delete recipe');
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     const RecipeCard = ({ recipe }: { recipe: Recipe }) => (
         <TouchableOpacity
@@ -105,13 +63,13 @@ export default function Recipes() {
                 shadowRadius: 8,
                 elevation: 3
             }}
-            onPress={() => router.push("/recipes/recipe-detail")}
+            onPress={() => router.push(`/recipes/recipe-detail?id=${recipe.id}`)}
             activeOpacity={0.7}
         >
             {/* Recipe Image */}
             <View style={{ position: 'relative' }}>
                 <Image
-                    source={{ uri: recipe.image }}
+                    source={{ uri: recipe.imageUrl || 'https://via.placeholder.com/400x180?text=No+Image' }}
                     style={{ width: '100%', height: 180 }}
                     resizeMode="cover"
                 />
@@ -142,22 +100,20 @@ export default function Recipes() {
                     {recipe.name}
                 </Text>
 
-                {/* Cuisine Tags */}
+                {/* Cuisine Tag */}
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
-                    {recipe.cuisines.map((cuisine, index) => (
-                        <View key={index} style={{
-                            backgroundColor: Colors.light.surface,
-                            paddingHorizontal: 10,
-                            paddingVertical: 4,
-                            borderRadius: 12,
-                            marginRight: 6,
-                            marginBottom: 6
-                        }}>
-                            <Text style={{ fontSize: 12, color: Colors.primary.main, fontWeight: '500' }}>
-                                {cuisine}
-                            </Text>
-                        </View>
-                    ))}
+                    <View style={{
+                        backgroundColor: Colors.light.surface,
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 12,
+                        marginRight: 6,
+                        marginBottom: 6
+                    }}>
+                        <Text style={{ fontSize: 12, color: Colors.primary.main, fontWeight: '500' }}>
+                            {recipe.cuisine}
+                        </Text>
+                    </View>
                 </View>
 
                 {/* Time and Servings */}
@@ -186,7 +142,7 @@ export default function Recipes() {
                 }}>
                     <View style={{ alignItems: 'center' }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: Colors.primary.main }}>
-                            {recipe.calories}
+                            {recipe.nutrition.calories}
                         </Text>
                         <Text style={{ fontSize: 12, color: Colors.light.text.secondary, marginTop: 2 }}>
                             cal
@@ -194,7 +150,7 @@ export default function Recipes() {
                     </View>
                     <View style={{ alignItems: 'center' }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: Colors.secondary.main }}>
-                            {recipe.protein}g
+                            {recipe.nutrition.protein}g
                         </Text>
                         <Text style={{ fontSize: 12, color: Colors.light.text.secondary, marginTop: 2 }}>
                             protein
@@ -202,7 +158,7 @@ export default function Recipes() {
                     </View>
                     <View style={{ alignItems: 'center' }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: Colors.primary.dark }}>
-                            {recipe.carbs}g
+                            {recipe.nutrition.carbs}g
                         </Text>
                         <Text style={{ fontSize: 12, color: Colors.light.text.secondary, marginTop: 2 }}>
                             carbs
@@ -210,7 +166,7 @@ export default function Recipes() {
                     </View>
                     <View style={{ alignItems: 'center' }}>
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#F59E0B' }}>
-                            {recipe.fat}g
+                            {recipe.nutrition.fat}g
                         </Text>
                         <Text style={{ fontSize: 12, color: Colors.light.text.secondary, marginTop: 2 }}>
                             fat
@@ -317,44 +273,82 @@ export default function Recipes() {
                 </TouchableOpacity>
             </View>
 
-            {/* Recipe List */}
-            <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{
-                    paddingHorizontal: 24,
-                    paddingTop: 24,
-                    paddingBottom: 100 + insets.bottom
-                }}
-                showsVerticalScrollIndicator={false}
-            >
-                {displayedRecipes.length > 0 ? (
-                    displayedRecipes.map((recipe) => (
-                        <RecipeCard key={recipe.id} recipe={recipe} />
-                    ))
-                ) : (
-                    <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-                        <Text style={{ fontSize: 60, marginBottom: 16 }}>📖</Text>
-                        <Text style={{
-                            fontSize: 18,
-                            fontWeight: '600',
-                            color: Colors.light.text.primary,
-                            marginBottom: 8
-                        }}>
-                            {activeTab === 'my-recipes' ? 'No Recipes Yet' : 'Discover Recipes'}
-                        </Text>
-                        <Text style={{
-                            fontSize: 14,
-                            color: Colors.light.text.secondary,
-                            textAlign: 'center',
-                            paddingHorizontal: 40
-                        }}>
-                            {activeTab === 'my-recipes'
-                                ? 'Create your first recipe or fork one from Discover'
-                                : 'Search for recipes based on your preferences'}
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
+            {/* Error Message */}
+            {error && (
+                <View style={{
+                    backgroundColor: '#FEE2E2',
+                    padding: 12,
+                    marginHorizontal: 24,
+                    marginTop: 16,
+                    borderRadius: 8,
+                    borderLeftWidth: 4,
+                    borderLeftColor: '#EF4444'
+                }}>
+                    <Text style={{ color: '#991B1B', fontSize: 14 }}>
+                        {error}
+                    </Text>
+                </View>
+            )}
+
+            {/* Loading Indicator */}
+            {loading && myRecipes.length === 0 && discoveredRecipes.length === 0 ? (
+                <View style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: 60
+                }}>
+                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <Text style={{
+                        marginTop: 16,
+                        fontSize: 16,
+                        color: Colors.light.text.secondary
+                    }}>
+                        Loading recipes...
+                    </Text>
+                </View>
+            ) : (
+                <>
+                    {/* Recipe List */}
+                    <ScrollView
+                        style={{ flex: 1 }}
+                        contentContainerStyle={{
+                            paddingHorizontal: 24,
+                            paddingTop: 24,
+                            paddingBottom: 100 + insets.bottom
+                        }}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {filteredRecipes.length > 0 ? (
+                            filteredRecipes.map((recipe) => (
+                                <RecipeCard key={recipe.id} recipe={recipe} />
+                            ))
+                        ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+                                <Text style={{ fontSize: 60, marginBottom: 16 }}>📖</Text>
+                                <Text style={{
+                                    fontSize: 18,
+                                    fontWeight: '600',
+                                    color: Colors.light.text.primary,
+                                    marginBottom: 8
+                                }}>
+                                    {activeTab === 'my-recipes' ? 'No Recipes Yet' : 'Discover Recipes'}
+                                </Text>
+                                <Text style={{
+                                    fontSize: 14,
+                                    color: Colors.light.text.secondary,
+                                    textAlign: 'center',
+                                    paddingHorizontal: 40
+                                }}>
+                                    {activeTab === 'my-recipes'
+                                        ? 'Create your first recipe or fork one from Discover'
+                                        : 'Search for recipes based on your preferences'}
+                                </Text>
+                            </View>
+                        )}
+                    </ScrollView>
+                </>
+            )}
 
             {/* Floating Action Button (Create Recipe) */}
             {activeTab === 'my-recipes' && (

@@ -1,8 +1,12 @@
+import { useInventory } from '@/hooks/useInventory';
+import { InventoryItem } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     FlatList,
     ScrollView,
     Text,
@@ -12,45 +16,41 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface InventoryItem {
-    id: string;
-    name: string;
-    quantity: number;
-    unit: string;
-    category: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-}
-
 export default function Inventory() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { items, loading, error, deleteItem } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-    // Mock inventory data
-    const mockItems: InventoryItem[] = [
-        { id: '1', name: 'Chicken Breast', quantity: 1000, unit: 'g', category: 'Protein', calories: 165, protein: 31, carbs: 0, fat: 3.6 },
-        { id: '2', name: 'Brown Rice', quantity: 2, unit: 'kg', category: 'Grains', calories: 370, protein: 7.9, carbs: 77, fat: 2.9 },
-        { id: '3', name: 'Tomatoes', quantity: 500, unit: 'g', category: 'Produce', calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2 },
-        { id: '4', name: 'Greek Yogurt', quantity: 500, unit: 'ml', category: 'Dairy', calories: 59, protein: 10, carbs: 3.6, fat: 0.4 },
-        { id: '5', name: 'Olive Oil', quantity: 500, unit: 'ml', category: 'Oils', calories: 884, protein: 0, carbs: 0, fat: 100 },
-        { id: '6', name: 'Quinoa', quantity: 1, unit: 'kg', category: 'Grains', calories: 368, protein: 14, carbs: 64, fat: 6 },
-        { id: '7', name: 'Salmon Fillet', quantity: 500, unit: 'g', category: 'Protein', calories: 208, protein: 20, carbs: 0, fat: 13 },
-        { id: '8', name: 'Spinach', quantity: 300, unit: 'g', category: 'Produce', calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4 },
-        { id: '9', name: 'Eggs', quantity: 12, unit: 'pieces', category: 'Protein', calories: 155, protein: 13, carbs: 1.1, fat: 11 },
-        { id: '10', name: 'Avocado', quantity: 3, unit: 'pieces', category: 'Produce', calories: 160, protein: 2, carbs: 8.5, fat: 15 },
-    ];
+    const categories = ['All', 'Protein', 'Grains', 'Produce', 'Dairy', 'Oils', 'Other'];
 
-    const categories = ['All', 'Protein', 'Grains', 'Produce', 'Dairy', 'Oils'];
-
-    const filteredItems = mockItems.filter(item => {
+    const filteredItems = items.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
+
+    const handleDeleteItem = (itemId: string, itemName: string) => {
+        Alert.alert(
+            'Delete Item',
+            `Are you sure you want to delete "${itemName}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deleteItem(itemId);
+                        } catch (err: any) {
+                            Alert.alert('Error', err.message || 'Failed to delete item');
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
     const renderItem = ({ item }: { item: InventoryItem }) => (
         <View style={{
@@ -121,7 +121,7 @@ export default function Inventory() {
                     </View>
                 </View>
                 <TouchableOpacity
-                    onPress={() => {/* TODO: Delete item */ }}
+                    onPress={() => handleDeleteItem(item.id, item.name)}
                     style={{
                         width: 32,
                         height: 32,
@@ -144,16 +144,16 @@ export default function Inventory() {
                 gap: 16
             }}>
                 <Text style={{ fontSize: 12, color: Colors.light.text.secondary }}>
-                    🔥 {item.calories} cal
+                    🔥 {item.nutrition.calories} cal
                 </Text>
                 <Text style={{ fontSize: 12, color: Colors.light.text.secondary }}>
-                    💪 {item.protein}g
+                    💪 {item.nutrition.protein}g
                 </Text>
                 <Text style={{ fontSize: 12, color: Colors.light.text.secondary }}>
-                    🍞 {item.carbs}g
+                    🍞 {item.nutrition.carbs}g
                 </Text>
                 <Text style={{ fontSize: 12, color: Colors.light.text.secondary }}>
-                    🥑 {item.fat}g
+                    🥑 {item.nutrition.fat}g
                 </Text>
             </View>
         </View>
@@ -180,128 +180,167 @@ export default function Inventory() {
                     fontSize: 14,
                     color: 'rgba(255, 255, 255, 0.9)'
                 }}>
-                    {mockItems.length} items in stock
+                    {loading ? 'Loading...' : `${items.length} items in stock`}
                 </Text>
             </View>
 
-            {/* Search Bar */}
-            <View style={{
-                paddingHorizontal: 24,
-                paddingTop: 16
-            }}>
+            {/* Error Message */}
+            {error && (
                 <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: 'white',
-                    borderRadius: 12,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 2
+                    backgroundColor: '#FEE2E2',
+                    padding: 12,
+                    marginHorizontal: 24,
+                    marginTop: 16,
+                    borderRadius: 8,
+                    borderLeftWidth: 4,
+                    borderLeftColor: '#EF4444'
                 }}>
-                    <Ionicons name="search" size={20} color={Colors.light.text.tertiary} />
-                    <TextInput
-                        style={{
-                            flex: 1,
-                            marginLeft: 12,
-                            fontSize: 16,
-                            color: Colors.light.text.primary
-                        }}
-                        placeholder="Search inventory..."
-                        placeholderTextColor={Colors.light.text.tertiary}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
+                    <Text style={{ color: '#991B1B', fontSize: 14 }}>
+                        {error}
+                    </Text>
                 </View>
-            </View>
+            )}
 
-            {/* Category Filter */}
-            <View style={{
-                marginTop: 16,
-                marginBottom: 12,
-                height: 50
-            }}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{
-                        paddingHorizontal: 24,
-                        alignItems: 'center',
-                        height: 50
-                    }}
-                >
-                    {categories.map((category, index) => (
-                        <TouchableOpacity
-                            key={category}
-                            style={{
-                                paddingHorizontal: 20,
-                                paddingVertical: 10,
-                                borderRadius: 22,
-                                backgroundColor: selectedCategory === category ? Colors.primary.main : 'white',
-                                borderWidth: 1.5,
-                                borderColor: selectedCategory === category ? Colors.primary.main : Colors.light.border,
-                                marginRight: 12,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.1,
-                                shadowRadius: 3,
-                                elevation: 2,
-                                height: 44,
-                                justifyContent: 'center'
-                            }}
-                            onPress={() => setSelectedCategory(category)}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={{
-                                fontSize: 15,
-                                fontWeight: '600',
-                                color: selectedCategory === category ? 'white' : Colors.light.text.primary
-                            }}>
-                                {category}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-
-            {/* Items List */}
-            <FlatList
-                data={filteredItems}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{
-                    paddingHorizontal: 24,
-                    paddingTop: 16,
-                    paddingBottom: 100 + insets.bottom
-                }}
-                ListEmptyComponent={
-                    <View style={{
-                        alignItems: 'center',
-                        paddingVertical: 60
+            {/* Loading Indicator */}
+            {loading && items.length === 0 && (
+                <View style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <Text style={{
+                        marginTop: 16,
+                        fontSize: 16,
+                        color: Colors.light.text.secondary
                     }}>
-                        <Ionicons name="basket-outline" size={64} color={Colors.light.text.tertiary} />
-                        <Text style={{
-                            fontSize: 18,
-                            fontWeight: '600',
-                            color: Colors.light.text.primary,
-                            marginTop: 16,
-                            marginBottom: 8
+                        Loading inventory...
+                    </Text>
+                </View>
+            )}
+
+            {/* Search Bar */}
+            {!loading || items.length > 0 ? (
+                <>
+                    <View style={{
+                        paddingHorizontal: 24,
+                        paddingTop: 16
+                    }}>
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: 'white',
+                            borderRadius: 12,
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            elevation: 2
                         }}>
-                            No Items Found
-                        </Text>
-                        <Text style={{
-                            fontSize: 14,
-                            color: Colors.light.text.secondary,
-                            textAlign: 'center'
-                        }}>
-                            {searchQuery ? 'Try a different search' : 'Add items to get started'}
-                        </Text>
+                            <Ionicons name="search" size={20} color={Colors.light.text.tertiary} />
+                            <TextInput
+                                style={{
+                                    flex: 1,
+                                    marginLeft: 12,
+                                    fontSize: 16,
+                                    color: Colors.light.text.primary
+                                }}
+                                placeholder="Search inventory..."
+                                placeholderTextColor={Colors.light.text.tertiary}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                            />
+                        </View>
                     </View>
-                }
-            />
+
+                    {/* Category Filter */}
+                    <View style={{
+                        marginTop: 16,
+                        marginBottom: 12,
+                        height: 50
+                    }}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{
+                                paddingHorizontal: 24,
+                                alignItems: 'center',
+                                height: 50
+                            }}
+                        >
+                            {categories.map((category, index) => (
+                                <TouchableOpacity
+                                    key={category}
+                                    style={{
+                                        paddingHorizontal: 20,
+                                        paddingVertical: 10,
+                                        borderRadius: 22,
+                                        backgroundColor: selectedCategory === category ? Colors.primary.main : 'white',
+                                        borderWidth: 1.5,
+                                        borderColor: selectedCategory === category ? Colors.primary.main : Colors.light.border,
+                                        marginRight: 12,
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.1,
+                                        shadowRadius: 3,
+                                        elevation: 2,
+                                        height: 44,
+                                        justifyContent: 'center'
+                                    }}
+                                    onPress={() => setSelectedCategory(category)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={{
+                                        fontSize: 15,
+                                        fontWeight: '600',
+                                        color: selectedCategory === category ? 'white' : Colors.light.text.primary
+                                    }}>
+                                        {category}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+
+                    {/* Items List */}
+                    <FlatList
+                        data={filteredItems}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={{
+                            paddingHorizontal: 24,
+                            paddingTop: 16,
+                            paddingBottom: 100 + insets.bottom
+                        }}
+                        ListEmptyComponent={
+                            <View style={{
+                                alignItems: 'center',
+                                paddingVertical: 60
+                            }}>
+                                <Ionicons name="basket-outline" size={64} color={Colors.light.text.tertiary} />
+                                <Text style={{
+                                    fontSize: 18,
+                                    fontWeight: '600',
+                                    color: Colors.light.text.primary,
+                                    marginTop: 16,
+                                    marginBottom: 8
+                                }}>
+                                    No Items Found
+                                </Text>
+                                <Text style={{
+                                    fontSize: 14,
+                                    color: Colors.light.text.secondary,
+                                    textAlign: 'center'
+                                }}>
+                                    {searchQuery ? 'Try a different search' : 'Add items to get started'}
+                                </Text>
+                            </View>
+                        }
+                    />
+                </>
+            ) : null}
 
             {/* Add Button (FAB) */}
             <TouchableOpacity

@@ -1,16 +1,21 @@
+import { useRecipes } from '@/hooks/useRecipes';
+import { RecipeDifficulty } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CreateRecipe() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { addRecipe } = useRecipes();
 
     const [recipeName, setRecipeName] = useState('');
+    const [description, setDescription] = useState('');
     const [cuisine, setCuisine] = useState('');
+    const [difficulty, setDifficulty] = useState<RecipeDifficulty>('Medium');
     const [servings, setServings] = useState('4');
     const [prepTime, setPrepTime] = useState('');
     const [cookTime, setCookTime] = useState('');
@@ -20,11 +25,82 @@ export default function CreateRecipe() {
     const [protein, setProtein] = useState('');
     const [carbs, setCarbs] = useState('');
     const [fat, setFat] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSave = () => {
-        // TODO: Save recipe to Firestore
-        console.log('Saving recipe...');
-        router.back();
+    const handleSave = async () => {
+        // Validation
+        if (!recipeName.trim()) {
+            Alert.alert('Error', 'Please enter a recipe name');
+            return;
+        }
+        if (!cuisine.trim()) {
+            Alert.alert('Error', 'Please enter a cuisine type');
+            return;
+        }
+        if (!ingredients.trim()) {
+            Alert.alert('Error', 'Please enter ingredients');
+            return;
+        }
+        if (!instructions.trim()) {
+            Alert.alert('Error', 'Please enter cooking instructions');
+            return;
+        }
+        if (!prepTime || !cookTime) {
+            Alert.alert('Error', 'Please enter prep and cook times');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Parse ingredients from text (simple line-by-line parsing)
+            const ingredientsList = ingredients
+                .split('\n')
+                .filter(line => line.trim())
+                .map(line => {
+                    // Simple parsing: "500g chicken breast" -> {name: "chicken breast", amount: 500, unit: "g"}
+                    const match = line.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)\s+(.+)$/);
+                    if (match) {
+                        return {
+                            name: match[3].trim(),
+                            amount: parseFloat(match[1]),
+                            unit: match[2]
+                        };
+                    }
+                    // Fallback: treat whole line as ingredient name
+                    return {
+                        name: line.trim(),
+                        amount: 1,
+                        unit: 'piece'
+                    };
+                });
+
+            await addRecipe({
+                name: recipeName.trim(),
+                ...(description.trim() && { description: description.trim() }),
+                cuisine: cuisine.trim(),
+                difficulty,
+                servings: parseInt(servings) || 4,
+                prepTimeMin: parseInt(prepTime),
+                cookTimeMin: parseInt(cookTime),
+                nutrition: {
+                    calories: calories ? parseFloat(calories) : 0,
+                    protein: protein ? parseFloat(protein) : 0,
+                    carbs: carbs ? parseFloat(carbs) : 0,
+                    fat: fat ? parseFloat(fat) : 0,
+                },
+                ingredients: ingredientsList,
+                instructions: instructions.trim(),
+                isPublic: true, // Custom recipes are public by default
+            });
+
+            Alert.alert('Success', 'Recipe created successfully!', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to create recipe');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -74,6 +150,35 @@ export default function CreateRecipe() {
                         placeholder="e.g., Chicken Tikka Masala"
                         value={recipeName}
                         onChangeText={setRecipeName}
+                    />
+                </View>
+
+                {/* Description */}
+                <View style={{ marginBottom: 20 }}>
+                    <Text style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: Colors.light.text.secondary,
+                        marginBottom: 8
+                    }}>
+                        Description (optional)
+                    </Text>
+                    <TextInput
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: 12,
+                            padding: 16,
+                            fontSize: 16,
+                            borderWidth: 1,
+                            borderColor: Colors.light.border,
+                            minHeight: 80,
+                            textAlignVertical: 'top'
+                        }}
+                        placeholder="Brief description of your recipe..."
+                        value={description}
+                        onChangeText={setDescription}
+                        multiline
+                        numberOfLines={3}
                     />
                 </View>
 
@@ -405,17 +510,23 @@ export default function CreateRecipe() {
                         backgroundColor: Colors.primary.main,
                         paddingVertical: 14,
                         borderRadius: 12,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        opacity: loading ? 0.7 : 1
                     }}
                     onPress={handleSave}
+                    disabled={loading}
                 >
-                    <Text style={{
-                        fontSize: 16,
-                        fontWeight: '600',
-                        color: 'white'
-                    }}>
-                        Save Recipe
-                    </Text>
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: 'white'
+                        }}>
+                            Save Recipe
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

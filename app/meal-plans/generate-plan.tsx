@@ -1,17 +1,19 @@
+import { useMealPlan } from '@/hooks/useMealPlan';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function GeneratePlan() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { generating, generatePlan } = useMealPlan();
+
     const [duration, setDuration] = useState<7 | 30>(7);
     const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
     const [includeCustomRecipes, setIncludeCustomRecipes] = useState(true);
-    const [isGenerating, setIsGenerating] = useState(false);
 
     const cuisines = [
         'Indian', 'Mexican', 'Italian', 'Chinese', 'Japanese',
@@ -27,12 +29,25 @@ export default function GeneratePlan() {
     };
 
     const handleGenerate = async () => {
-        setIsGenerating(true);
-        // TODO: Implement actual plan generation
-        setTimeout(() => {
-            setIsGenerating(false);
-            router.back();
-        }, 2000);
+        try {
+            await generatePlan(duration, selectedCuisines, includeCustomRecipes);
+            Alert.alert(
+                'Success!',
+                `Your ${duration}-day meal plan has been generated. Check your shopping list for ingredients you need to buy.`,
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => router.back()
+                    }
+                ]
+            );
+        } catch (error: any) {
+            Alert.alert(
+                'Generation Failed',
+                error.message || 'Failed to generate meal plan. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
     };
 
     return (
@@ -241,17 +256,22 @@ export default function GeneratePlan() {
                         paddingVertical: 16,
                         borderRadius: 12,
                         alignItems: 'center',
-                        opacity: isGenerating ? 0.6 : 1
+                        opacity: generating ? 0.6 : 1,
+                        flexDirection: 'row',
+                        justifyContent: 'center'
                     }}
                     onPress={handleGenerate}
-                    disabled={isGenerating}
+                    disabled={generating}
                 >
+                    {generating && (
+                        <ActivityIndicator color="white" style={{ marginRight: 12 }} />
+                    )}
                     <Text style={{
                         fontSize: 18,
                         fontWeight: 'bold',
                         color: 'white'
                     }}>
-                        {isGenerating ? 'Generating Plan...' : `Generate ${duration}-Day Plan`}
+                        {generating ? 'Generating Plan...' : `Generate ${duration}-Day Plan`}
                     </Text>
                 </TouchableOpacity>
             </View>

@@ -1,30 +1,64 @@
+import { useInventory } from '@/hooks/useInventory';
+import { InventoryCategory } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddInventoryItem() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { addItem } = useInventory();
 
     const [itemName, setItemName] = useState('');
     const [quantity, setQuantity] = useState('');
     const [unit, setUnit] = useState('g');
-    const [selectedCategory, setSelectedCategory] = useState('Protein');
+    const [selectedCategory, setSelectedCategory] = useState<InventoryCategory>('Protein');
     const [calories, setCalories] = useState('');
     const [protein, setProtein] = useState('');
     const [carbs, setCarbs] = useState('');
     const [fat, setFat] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const categories = ['Protein', 'Grains', 'Produce', 'Dairy', 'Oils', 'Other'];
+    const categories: InventoryCategory[] = ['Protein', 'Grains', 'Produce', 'Dairy', 'Oils', 'Other'];
     const units = ['g', 'kg', 'ml', 'L', 'pieces', 'cups', 'tbsp', 'tsp'];
 
-    const handleSave = () => {
-        // TODO: Save to Firestore
-        console.log('Saving inventory item...');
-        router.back();
+    const handleSave = async () => {
+        // Validation
+        if (!itemName.trim()) {
+            Alert.alert('Error', 'Please enter an item name');
+            return;
+        }
+        if (!quantity || parseFloat(quantity) <= 0) {
+            Alert.alert('Error', 'Please enter a valid quantity');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await addItem({
+                name: itemName.trim(),
+                quantity: parseFloat(quantity),
+                unit,
+                category: selectedCategory,
+                nutrition: {
+                    calories: calories ? parseFloat(calories) : 0,
+                    protein: protein ? parseFloat(protein) : 0,
+                    carbs: carbs ? parseFloat(carbs) : 0,
+                    fat: fat ? parseFloat(fat) : 0,
+                },
+            });
+
+            Alert.alert('Success', 'Item added to inventory', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to add item');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -360,17 +394,23 @@ export default function AddInventoryItem() {
                         backgroundColor: Colors.primary.main,
                         paddingVertical: 14,
                         borderRadius: 12,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        opacity: loading ? 0.7 : 1
                     }}
                     onPress={handleSave}
+                    disabled={loading}
                 >
-                    <Text style={{
-                        fontSize: 16,
-                        fontWeight: '600',
-                        color: 'white'
-                    }}>
-                        Add to Inventory
-                    </Text>
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={{
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: 'white'
+                        }}>
+                            Add to Inventory
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>
