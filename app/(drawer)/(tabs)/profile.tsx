@@ -1,3 +1,4 @@
+import { useNotifications } from '@/hooks/useNotifications';
 import { auth, db } from '@/services/firebase/config';
 import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
@@ -6,12 +7,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
+
 export default function Profile() {
     const router = useRouter();
     const [userName, setUserName] = useState('');
     const [userEmail, setUserEmail] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [userInitials, setUserInitials] = useState('');
+    const { unreadCount } = useNotifications();
+
 
     useEffect(() => {
         loadUserData();
@@ -97,12 +101,17 @@ export default function Profile() {
         );
     };
 
+    const quickAccessItems = [
+        { icon: '📊', label: 'Dashboard', route: '/(tabs)/dashboard', color: '#8B5CF6' },
+        { icon: '🔔', label: 'Notifications', route: '/(tabs)/notifications', color: Colors.primary.main, badge: unreadCount },
+    ];
+
     const profileSections = [
         {
             title: 'Account',
             items: [
                 { icon: '👤', label: 'Personal Information', route: '/profile/personal' },
-                { icon: '🔔', label: 'Notifications', route: '/profile/notifications' },
+                { icon: '⚙️', label: 'Notification Settings', route: '/profile/notifications' },
                 { icon: '🔒', label: 'Privacy & Security', route: '/profile/privacy' },
             ]
         },
@@ -210,6 +219,86 @@ export default function Profile() {
                             Weeks Active
                         </Text>
                     </View>
+                </View>
+            </View>
+
+            {/* Quick Access */}
+            <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+                <Text style={{
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: Colors.light.text.secondary,
+                    marginBottom: 12,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5
+                }}>
+                    Quick Access
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    {quickAccessItems.map((item, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={{
+                                flex: 1,
+                                backgroundColor: 'white',
+                                borderRadius: 12,
+                                padding: 16,
+                                alignItems: 'center',
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.08,
+                                shadowRadius: 4,
+                                elevation: 2
+                            }}
+                            onPress={() => router.push(item.route as any)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 24,
+                                backgroundColor: `${item.color}20`,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: 8,
+                                position: 'relative'
+                            }}>
+                                <Text style={{ fontSize: 24 }}>{item.icon}</Text>
+                                {item.badge && item.badge > 0 && (
+                                    <View style={{
+                                        position: 'absolute',
+                                        top: -4,
+                                        right: -4,
+                                        backgroundColor: '#EF4444',
+                                        borderRadius: 10,
+                                        minWidth: 20,
+                                        height: 20,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        paddingHorizontal: 6,
+                                        borderWidth: 2,
+                                        borderColor: 'white'
+                                    }}>
+                                        <Text style={{
+                                            fontSize: 11,
+                                            fontWeight: 'bold',
+                                            color: 'white'
+                                        }}>
+                                            {item.badge > 99 ? '99+' : item.badge}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={{
+                                fontSize: 13,
+                                fontWeight: '600',
+                                color: Colors.light.text.primary,
+                                textAlign: 'center'
+                            }}>
+                                {item.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
 

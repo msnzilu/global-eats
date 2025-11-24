@@ -1,18 +1,16 @@
 import {
     createUserWithEmailAndPassword,
-    EmailAuthProvider,
-    GoogleAuthProvider,
+    EmailAuthProvider, // ADD 
     reauthenticateWithCredential,
-    sendPasswordResetEmail,
+    sendPasswordResetEmail, // ADD THIS
     signInWithEmailAndPassword,
-    signInWithPopup,
     signOut,
     updatePassword,
-    User,
+    User
 } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
 import { auth } from './config';
-import { createUserProfile, getUserProfile, updateLastLogin } from './firestore';
+import { createUserProfile } from './firestore';
 
 // ============================================================================
 // TYPES
@@ -113,53 +111,128 @@ export async function registerWithEmail(
 }
 
 /**
- * Sign in with Google OAuth
- * Creates user profile in Firestore if first time login
+ * USE THIS IN YOUR COMPONENT (not as a standalone function)
+ * Hook-based Google OAuth for expo-auth-session v5+
  */
-export async function signInWithGoogle(): Promise<AuthResponse> {
-    try {
-        const provider = new GoogleAuthProvider();
-        const userCredential = await signInWithPopup(auth, provider);
-        const user = userCredential.user;
 
-        // Check if user profile exists, create if not
-        const existingProfile = await getUserProfile(user.uid);
+import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import React from 'react';
+import { getUserProfile, updateLastLogin } from './firestore';
 
-        if (!existingProfile) {
-            // First time Google sign-in, create profile
-            await createUserProfile(user.uid, {
-                email: user.email || '',
-                displayName: user.displayName || 'User',
-                createdAt: Timestamp.fromDate(new Date()),
-                lastLoginAt: Timestamp.fromDate(new Date()),
-                // Default values - will be updated during onboarding
-                dietType: 'None',
-                allergies: [],
-                goal: 'Maintain Weight',
-                targetCalories: 2000,
-                mealsPerDay: 3,
-                preferredCuisines: [],
-                maxCookingTime: '30-45 min',
-                currentStreak: 0,
-                totalMealsCompleted: 0,
-            });
-        } else {
-            // Update last login for existing user
-            await updateLastLogin(user.uid);
+// IMPORTANT: Add this at the top of your component file
+WebBrowser.maybeCompleteAuthSession();
+
+/**
+ * Custom hook for Google authentication
+ * Use this in your login component
+ */
+export function useGoogleAuth() {
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+
+    const redirectUri = AuthSession.makeRedirectUri();
+    console.log('🔧 Proxy Redirect URI:', redirectUri);
+
+    // Configure Google auth request
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+        iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+        redirectUri,
+        scopes: ['openid', 'profile', 'email'],
+    });
+
+    // Handle the OAuth response
+    React.useEffect(() => {
+        if (response?.type === 'success') {
+            handleGoogleSignIn(response.params.id_token);
+        } else if (response?.type === 'error') {
+            setError('Google sign-in failed. Please try again.');
+            setIsLoading(false);
+        } else if (response?.type === 'cancel') {
+            setError('Sign-in cancelled');
+            setIsLoading(false);
+        }
+    }, [response]);
+
+    const handleGoogleSignIn = async (idToken: string) => {
+        try {
+            console.log('✅ Got ID token, exchanging for Firebase credential...');
+
+            // Create Firebase credential from Google ID token
+            const credential = GoogleAuthProvider.credential(idToken);
+
+            // Sign in to Firebase
+            const userCredential = await signInWithCredential(auth, credential);
+            const user = userCredential.user;
+
+            console.log('✅ Firebase sign-in successful, user ID:', user.uid);
+
+            // Check if user profile exists, create if not
+            const existingProfile = await getUserProfile(user.uid);
+
+            if (!existingProfile) {
+                console.log('📝 Creating new user profile...');
+                await createUserProfile(user.uid, {
+                    email: user.email || '',
+                    displayName: user.displayName || 'User',
+                    createdAt: Timestamp.fromDate(new Date()),
+                    lastLoginAt: Timestamp.fromDate(new Date()),
+                    dietType: 'None',
+                    allergies: [],
+                    goal: 'Maintain Weight',
+                    targetCalories: 2000,
+                    mealsPerDay: 3,
+                    preferredCuisines: [],
+                    maxCookingTime: '30-45 min',
+                    currentStreak: 0,
+                    totalMealsCompleted: 0,
+                });
+            } else {
+                console.log('📝 Updating last login...');
+                await updateLastLogin(user.uid);
+            }
+
+            console.log('🎉 Google sign-in complete!');
+            setIsLoading(false);
+            setError(null);
+        } catch (err: any) {
+            console.error('❌ Firebase sign-in error:', err);
+            setError(err.message || 'Sign-in failed. Please try again.');
+            setIsLoading(false);
+        }
+    };
+
+    const signInWithGoogle = async () => {
+        if (!request) {
+            setError('Google sign-in is not ready. Please try again.');
+            return;
         }
 
-        return {
-            success: true,
-            user,
-        };
-    } catch (error: any) {
-        console.error('Google sign-in error:', error);
-        return {
-            success: false,
-            error: getFirebaseErrorMessage(error.code),
-        };
-    }
+        setIsLoading(true);
+        setError(null);
+        console.log('🔐 Starting Google OAuth flow...');
+
+        try {
+            await promptAsync();
+        } catch (err: any) {
+            console.error('❌ Google sign-in error:', err);
+            setError(err.message || 'Failed to open sign-in page.');
+            setIsLoading(false);
+        }
+    };
+
+    return {
+        signInWithGoogle,
+        isLoading,
+        error,
+        isReady: !!request,
+    };
 }
+
 
 /**
  * Login with email and password

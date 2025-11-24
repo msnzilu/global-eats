@@ -361,6 +361,13 @@ export async function generateMealPlan(
         // 7. Generate shopping list
         await generateShoppingListFromPlan(userId, planData as any, inventory);
 
+        // 8. Create notification for user
+        try {
+            await createMealPlanNotification(userId, planDoc.id, options.duration);
+        } catch (notifError) {
+            console.warn('⚠️ Failed to create notification, but meal plan was generated successfully:', notifError);
+        }
+
         return planDoc.id;
     } catch (error) {
         console.error('Error generating meal plan:', error);

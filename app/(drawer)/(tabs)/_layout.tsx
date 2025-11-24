@@ -1,4 +1,5 @@
 import { Tabs, useNavigation } from 'expo-router';
+import React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
@@ -25,7 +26,7 @@ function HeaderMenuButton() {
             }}
             activeOpacity={0.7}
         >
-            <Ionicons name="menu" size={24} color="white" />
+            <Ionicons name="person-circle-outline" size={28} color="white" />
         </TouchableOpacity>
     );
 }
@@ -39,13 +40,14 @@ export default function TabLayout() {
             screenOptions={{
                 tabBarActiveTintColor: Colors.primary.main,
                 tabBarInactiveTintColor: Colors.light.text.tertiary,
-                headerShown: false, // This was in the original, keeping it unless explicitly removed
-                tabBarButton: HapticTab, // This was in the original, keeping it unless explicitly removed
+                headerShown: false,
+                tabBarButton: HapticTab,
                 tabBarStyle: {
                     backgroundColor: 'white',
                     borderTopWidth: 1,
                     borderTopColor: Colors.light.border,
-                    paddingBottom: 8,
+                    height: 60 + insets.bottom,
+                    paddingBottom: insets.bottom + 8,
                     paddingTop: 8,
                 },
                 tabBarLabelStyle: {
@@ -77,19 +79,6 @@ export default function TabLayout() {
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? "basket" : "basket-outline"}
-                            size={24}
-                            color={color}
-                        />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="dashboard"
-                options={{
-                    title: 'Stats',
-                    tabBarIcon: ({ color, focused }) => (
-                        <Ionicons
-                            name={focused ? "home" : "home-outline"}
                             size={24}
                             color={color}
                         />

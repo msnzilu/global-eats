@@ -1,5 +1,5 @@
 // QUICK TEST VERSION - This skips updateLastLogin to test navigation
-import { isValidEmail, loginWithEmail, signInWithGoogle } from '@/services/firebase/auth';
+import { isValidEmail, loginWithEmail, useGoogleAuth } from '@/services/firebase/auth';
 import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -11,6 +11,13 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const {
+        signInWithGoogle,
+        isLoading: isGoogleLoading,
+        error: googleError,
+        isReady
+    } = useGoogleAuth();
 
     const handleLogin = async () => {
         setError('');
@@ -41,13 +48,13 @@ export default function Login() {
 
                 // Navigate immediately
                 console.log('🚀 Attempting navigation to /(tabs)/planner');
-                router.replace('/(tabs)/planner');
+                router.replace('/(drawer)/(tabs)/planner');
                 console.log('✅ Navigation replace() called');
 
                 // Also try push as backup after a short delay
                 setTimeout(() => {
                     console.log('🔄 Backup: trying push navigation');
-                    router.push('/(tabs)/planner');
+                    router.push('/(drawer)/(tabs)/planner');
                 }, 100);
             } else {
                 console.log('❌ Login failed:', response.error);
@@ -56,29 +63,6 @@ export default function Login() {
         } catch (err) {
             console.error('❌ Login error:', err);
             setError('An unexpected error occurred. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleGoogleSignIn = async () => {
-        setError('');
-        setIsLoading(true);
-        try {
-            console.log('🔐 Google sign-in attempt');
-            const response = await signInWithGoogle();
-
-            if (response.success && response.user) {
-                console.log('✅ Google sign-in successful');
-                console.log('🚀 Navigating to planner');
-                router.replace('/(tabs)/planner');
-            } else if (response.error && response.error !== 'Sign-in cancelled') {
-                console.log('❌ Google sign-in error:', response.error);
-                setError(response.error);
-            }
-        } catch (err) {
-            console.error('❌ Google sign-in error:', err);
-            setError('Google sign-in failed. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -302,7 +286,7 @@ export default function Login() {
                             />
                         </View>
 
-                        {/* Google Sign In */}
+                        {/* Google Sign Up - Secondary Amber */}
                         <TouchableOpacity
                             style={{
                                 width: '100%',
@@ -317,22 +301,29 @@ export default function Login() {
                                 borderWidth: 1,
                                 borderColor: Colors.light.border,
                                 minHeight: 48,
+                                opacity: (!isReady || isGoogleLoading) ? 0.5 : 1,
                             }}
-                            onPress={handleGoogleSignIn}
+                            onPress={signInWithGoogle}
+                            disabled={!isReady || isGoogleLoading}
                             activeOpacity={0.8}
-                            disabled={isLoading}
                         >
-                            <Text style={{ fontSize: 24, marginRight: 12 }}>🔍</Text>
-                            <Text
-                                style={{
-                                    fontSize: 18,
-                                    fontWeight: '600',
-                                    color: Colors.light.text.primary
-                                }}
-                            >
-                                Continue with Google
+                            <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.light.text.primary }}>
+                                {isGoogleLoading ? "Signing In..." : "Sign In with Google"}
                             </Text>
                         </TouchableOpacity>
+
+                        {/* Google error - separate from email error */}
+                        {googleError && (
+                            <Text style={{
+                                color: 'red',
+                                fontSize: 14,
+                                marginBottom: 16,
+                                textAlign: 'center',
+                            }}>
+                                {googleError}
+                            </Text>
+                        )}
+
 
                         {/* Sign Up Link */}
                         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>

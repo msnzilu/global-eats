@@ -1,20 +1,33 @@
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Notifications() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { preferences, isLoading, updatePreferences } = useNotificationPreferences();
 
-    const [pushEnabled, setPushEnabled] = useState(true);
-    const [emailEnabled, setEmailEnabled] = useState(true);
-    const [mealReminders, setMealReminders] = useState(true);
-    const [planUpdates, setPlanUpdates] = useState(true);
-    const [recipeUpdates, setRecipeUpdates] = useState(false);
-    const [shoppingReminders, setShoppingReminders] = useState(true);
+    const handleToggle = async (key: keyof typeof preferences, value: boolean) => {
+        try {
+            await updatePreferences({ [key]: value });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update notification preferences. Please try again.');
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={Colors.primary.main} />
+                <Text style={{ marginTop: 16, color: Colors.light.text.secondary }}>
+                    Loading preferences...
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -31,7 +44,7 @@ export default function Notifications() {
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
                 <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'white' }}>
-                    Notifications
+                    Notification Settings
                 </Text>
             </View>
 
@@ -58,8 +71,8 @@ export default function Notifications() {
                             </Text>
                         </View>
                         <Switch
-                            value={pushEnabled}
-                            onValueChange={setPushEnabled}
+                            value={preferences.pushEnabled}
+                            onValueChange={(value) => handleToggle('pushEnabled', value)}
                             trackColor={{ false: '#D1D5DB', true: Colors.primary.main }}
                         />
                     </View>
@@ -82,8 +95,8 @@ export default function Notifications() {
                             </Text>
                         </View>
                         <Switch
-                            value={emailEnabled}
-                            onValueChange={setEmailEnabled}
+                            value={preferences.emailEnabled}
+                            onValueChange={(value) => handleToggle('emailEnabled', value)}
                             trackColor={{ false: '#D1D5DB', true: Colors.primary.main }}
                         />
                     </View>
@@ -117,8 +130,8 @@ export default function Notifications() {
                             </Text>
                         </View>
                         <Switch
-                            value={mealReminders}
-                            onValueChange={setMealReminders}
+                            value={preferences.mealReminders}
+                            onValueChange={(value) => handleToggle('mealReminders', value)}
                             trackColor={{ false: '#D1D5DB', true: Colors.primary.main }}
                         />
                     </View>
@@ -141,8 +154,8 @@ export default function Notifications() {
                             </Text>
                         </View>
                         <Switch
-                            value={planUpdates}
-                            onValueChange={setPlanUpdates}
+                            value={preferences.planUpdates}
+                            onValueChange={(value) => handleToggle('planUpdates', value)}
                             trackColor={{ false: '#D1D5DB', true: Colors.primary.main }}
                         />
                     </View>
@@ -165,8 +178,8 @@ export default function Notifications() {
                             </Text>
                         </View>
                         <Switch
-                            value={recipeUpdates}
-                            onValueChange={setRecipeUpdates}
+                            value={preferences.recipeUpdates}
+                            onValueChange={(value) => handleToggle('recipeUpdates', value)}
                             trackColor={{ false: '#D1D5DB', true: Colors.primary.main }}
                         />
                     </View>
@@ -188,8 +201,8 @@ export default function Notifications() {
                             </Text>
                         </View>
                         <Switch
-                            value={shoppingReminders}
-                            onValueChange={setShoppingReminders}
+                            value={preferences.shoppingReminders}
+                            onValueChange={(value) => handleToggle('shoppingReminders', value)}
                             trackColor={{ false: '#D1D5DB', true: Colors.primary.main }}
                         />
                     </View>

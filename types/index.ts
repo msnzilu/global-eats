@@ -58,7 +58,7 @@ export interface Ingredient {
 
 export interface Recipe {
   id: string;
-  
+
   // Basic Info
   name: string;
   description?: string;
@@ -244,4 +244,39 @@ export interface DashboardStats {
     carbs: number;
     fat: number;
   };
+}
+
+// ============================================================================
+// NOTIFICATION TYPES
+// ============================================================================
+
+export type NotificationType =
+  | 'meal_reminder'
+  | 'plan_update'
+  | 'recipe_update'
+  | 'shopping_reminder'
+  | 'system';
+
+export type NotificationPriority = 'low' | 'medium' | 'high';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  isRead: boolean;
+  createdAt: Timestamp;
+  actionUrl?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface NotificationPreferences {
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  mealReminders: boolean;
+  planUpdates: boolean;
+  recipeUpdates: boolean;
+  shoppingReminders: boolean;
 }

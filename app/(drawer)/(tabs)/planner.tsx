@@ -1,3 +1,5 @@
+import Sidebar from '@/components/Sidebar';
+import SidebarToggle from '@/components/SidebarToggle';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -25,6 +27,7 @@ interface DayPlan {
 export default function Planner() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const [sidebarVisible, setSidebarVisible] = useState(false);
     const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
     // Mock 7-day meal plan - showing 1-3 meals per day based on user preference
@@ -113,20 +116,25 @@ export default function Planner() {
                 paddingBottom: 20,
                 paddingHorizontal: 24
             }}>
-                <Text style={{
-                    fontSize: 28,
-                    fontWeight: 'bold',
-                    color: 'white',
-                    marginBottom: 8
-                }}>
-                    Today's Plan
-                </Text>
-                <Text style={{
-                    fontSize: 14,
-                    color: 'rgba(255, 255, 255, 0.9)'
-                }}>
-                    {currentDay.meals.length} {currentDay.meals.length === 1 ? 'meal' : 'meals'} • {dailyCalories} cal • {dailyProtein}g protein
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{
+                            fontSize: 28,
+                            fontWeight: 'bold',
+                            color: 'white',
+                            marginBottom: 8
+                        }}>
+                            Today's Plan
+                        </Text>
+                        <Text style={{
+                            fontSize: 14,
+                            color: 'rgba(255, 255, 255, 0.9)'
+                        }}>
+                            {currentDay.meals.length} {currentDay.meals.length === 1 ? 'meal' : 'meals'} • {dailyCalories} cal • {dailyProtein}g protein
+                        </Text>
+                    </View>
+                    <SidebarToggle onPress={() => setSidebarVisible(true)} />
+                </View>
             </View>
 
             {/* Day Navigation */}
@@ -459,6 +467,11 @@ export default function Planner() {
                     </Text>
                 </TouchableOpacity>
             </View>
+
+            <Sidebar
+                visible={sidebarVisible}
+                onClose={() => setSidebarVisible(false)}
+            />
         </View>
     );
 }

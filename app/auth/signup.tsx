@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { isValidEmail, passwordsMatch, registerWithEmail, validatePassword } from '@/services/firebase/auth';
+import { isValidEmail, passwordsMatch, registerWithEmail, useGoogleAuth, validatePassword } from '@/services/firebase/auth';
 import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -14,6 +14,14 @@ export default function Signup() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Rename the destructured values to avoid conflicts
+    const {
+        signInWithGoogle,
+        isLoading: isGoogleLoading,
+        error: googleError,
+        isReady
+    } = useGoogleAuth();
 
     useEffect(() => {
         if (user) router.replace('/onboarding');
@@ -253,6 +261,18 @@ export default function Signup() {
                             />
                         </View>
 
+                        {/* Email signup error */}
+                        {error && (
+                            <Text style={{
+                                color: 'red',
+                                fontSize: 14,
+                                marginBottom: 16,
+                                textAlign: 'center',
+                            }}>
+                                {error}
+                            </Text>
+                        )}
+
                         {/* Sign Up Button - Primary Emerald Green */}
                         <TouchableOpacity
                             style={{
@@ -263,12 +283,14 @@ export default function Signup() {
                                 marginBottom: 16,
                                 backgroundColor: Colors.primary.main,
                                 minHeight: 48,
+                                opacity: isLoading ? 0.5 : 1,
                             }}
                             onPress={handleSignup}
+                            disabled={isLoading}
                             activeOpacity={0.8}
                         >
                             <Text style={{ color: 'white', fontSize: 18, fontWeight: '600', textAlign: 'center' }}>
-                                Sign Up
+                                {isLoading ? 'Creating Account...' : 'Sign Up'}
                             </Text>
                         </TouchableOpacity>
 
@@ -314,24 +336,28 @@ export default function Signup() {
                                 borderWidth: 1,
                                 borderColor: Colors.light.border,
                                 minHeight: 48,
+                                opacity: (!isReady || isGoogleLoading) ? 0.5 : 1,
                             }}
-                            onPress={() => {
-                                // TODO: Implement Google OAuth
-                                console.log('Google Sign Up');
-                            }}
+                            onPress={signInWithGoogle}
+                            disabled={!isReady || isGoogleLoading}
                             activeOpacity={0.8}
                         >
-                            <Text style={{ fontSize: 24, marginRight: 12 }}>🔍</Text>
-                            <Text
-                                style={{
-                                    fontSize: 18,
-                                    fontWeight: '600',
-                                    color: Colors.light.text.primary
-                                }}
-                            >
-                                Continue with Google
+                            <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.light.text.primary }}>
+                                {isGoogleLoading ? "Signing Up..." : "Sign Up with Google"}
                             </Text>
                         </TouchableOpacity>
+
+                        {/* Google error - separate from email error */}
+                        {googleError && (
+                            <Text style={{
+                                color: 'red',
+                                fontSize: 14,
+                                marginBottom: 16,
+                                textAlign: 'center',
+                            }}>
+                                {googleError}
+                            </Text>
+                        )}
 
                         {/* Terms and Privacy */}
                         <Text
