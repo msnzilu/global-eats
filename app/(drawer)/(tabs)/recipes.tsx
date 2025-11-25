@@ -1,26 +1,63 @@
 import Sidebar from '@/components/Sidebar';
 import SidebarToggle from '@/components/SidebarToggle';
+import { isCuisineLocal } from '@/constants/cuisine-regions';
 import { useRecipes } from '@/hooks/useRecipes';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Recipe } from '@/types';
 import { Colors } from '@/utils/constants';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RecipeType = 'my-recipes' | 'discover';
+type DiscoveryFilter = 'local' | 'international';
 
 export default function Recipes() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { myRecipes, discoveredRecipes, loading, error, deleteRecipe } = useRecipes();
+    const { profile } = useUserProfile();
     const [activeTab, setActiveTab] = useState<RecipeType>('my-recipes');
+    const [discoveryFilter, setDiscoveryFilter] = useState<DiscoveryFilter>('local');
     const [searchQuery, setSearchQuery] = useState('');
+    const [locationSearch, setLocationSearch] = useState('');
     const [sidebarVisible, setSidebarVisible] = useState(false);
 
-    const displayedRecipes = activeTab === 'my-recipes' ? myRecipes : discoveredRecipes;
+    // Get base recipes based on active tab
+    let displayedRecipes = activeTab === 'my-recipes' ? myRecipes : discoveredRecipes;
 
-    // Filter recipes based on search query
+    // Apply discovery filter (local/international) only for discover tab
+    if (activeTab === 'discover') {
+        // Only apply local/international filter if user has region data
+        if (profile?.country || profile?.region) {
+            displayedRecipes = displayedRecipes.filter(recipe => {
+                const isLocal = isCuisineLocal(recipe.cuisine, profile?.country, profile?.region);
+
+                if (discoveryFilter === 'local') {
+                    return isLocal;
+                } else {
+                    return !isLocal; // international
+                }
+            });
+        }
+        // If no user region data, show all recipes regardless of filter
+
+        // Apply location search filter (only for local recipes)
+        if (discoveryFilter === 'local' && locationSearch.trim()) {
+            const lowerLocationQuery = locationSearch.toLowerCase();
+            displayedRecipes = displayedRecipes.filter(recipe => {
+                return (
+                    recipe.location?.toLowerCase().includes(lowerLocationQuery) ||
+                    recipe.cuisine.toLowerCase().includes(lowerLocationQuery) ||
+                    recipe.name.toLowerCase().includes(lowerLocationQuery) // Also search recipe name
+                );
+            });
+        }
+    }
+
+    // Apply general search query filter
     const filteredRecipes = displayedRecipes.filter(recipe => {
         if (!searchQuery.trim()) return true;
         const lowerQuery = searchQuery.toLowerCase();
@@ -278,6 +315,122 @@ export default function Recipes() {
                 </TouchableOpacity>
             </View>
 
+            {/* Discovery Filter (Local/International) - Only show on Discover tab */}
+            {activeTab === 'discover' && (
+                <View style={{ marginHorizontal: 24, marginTop: 16 }}>
+                    {/* Local/International Toggle */}
+                    <View style={{
+                        flexDirection: 'row',
+                        backgroundColor: Colors.light.surface,
+                        borderRadius: 10,
+                        padding: 4,
+                        marginBottom: 12
+                    }}>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                paddingVertical: 10,
+                                borderRadius: 8,
+                                backgroundColor: discoveryFilter === 'local' ? Colors.secondary.main : 'transparent'
+                            }}
+                            onPress={() => {
+                                setDiscoveryFilter('local');
+                                setLocationSearch(''); // Clear location search when switching
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={{
+                                textAlign: 'center',
+                                fontSize: 14,
+                                fontWeight: '600',
+                                color: discoveryFilter === 'local' ? 'white' : Colors.light.text.secondary
+                            }}>
+                                🏠 Local
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                paddingVertical: 10,
+                                borderRadius: 8,
+                                backgroundColor: discoveryFilter === 'international' ? Colors.secondary.main : 'transparent'
+                            }}
+                            onPress={() => {
+                                setDiscoveryFilter('international');
+                                setLocationSearch(''); // Clear location search when switching
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={{
+                                textAlign: 'center',
+                                fontSize: 14,
+                                fontWeight: '600',
+                                color: discoveryFilter === 'international' ? 'white' : Colors.light.text.secondary
+                            }}>
+                                🌍 International
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Location Search (only for local filter) */}
+                    {discoveryFilter === 'local' && (
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: 'white',
+                            borderRadius: 10,
+                            paddingHorizontal: 14,
+                            paddingVertical: 10,
+                            borderWidth: 1,
+                            borderColor: Colors.light.border
+                        }}>
+                            <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
+                            <TextInput
+                                placeholder="Search location (e.g., Kenya, Rome)..."
+                                placeholderTextColor={Colors.light.text.tertiary}
+                                value={locationSearch}
+                                onChangeText={setLocationSearch}
+                                style={{
+                                    flex: 1,
+                                    fontSize: 14,
+                                    color: Colors.light.text.primary
+                                }}
+                            />
+                            {locationSearch.length > 0 && (
+                                <TouchableOpacity onPress={() => setLocationSearch('')}>
+                                    <Text style={{ fontSize: 18, color: Colors.light.text.secondary }}>✕</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+
+                    {/* User Region Indicator */}
+                    {profile?.country || profile?.region ? (
+                        <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 12, color: Colors.light.text.tertiary }}>
+                                Your region: {profile.country || profile.region}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View style={{
+                            marginTop: 8,
+                            padding: 12,
+                            backgroundColor: Colors.secondary.main + '20',
+                            borderRadius: 8,
+                            borderLeftWidth: 3,
+                            borderLeftColor: Colors.secondary.main
+                        }}>
+                            <Text style={{ fontSize: 12, color: Colors.light.text.primary, fontWeight: '600' }}>
+                                💡 Set your country/region in Profile Settings
+                            </Text>
+                            <Text style={{ fontSize: 11, color: Colors.light.text.secondary, marginTop: 4 }}>
+                                Local/International filtering works best when you set your location
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            )}
+
             {/* Error Message */}
             {error && (
                 <View style={{
@@ -355,36 +508,32 @@ export default function Recipes() {
                 </>
             )}
 
-            {/* Floating Action Button (Create Recipe) */}
-            {activeTab === 'my-recipes' && (
-                <TouchableOpacity
-                    style={{
-                        position: 'absolute',
-                        bottom: 24 + insets.bottom,
-                        right: 24,
-                        width: 60,
-                        height: 60,
-                        borderRadius: 30,
-                        backgroundColor: Colors.secondary.main,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 8,
-                        elevation: 8
-                    }}
-                    onPress={() => router.push('/recipes/create')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={{ fontSize: 28, color: 'white', fontWeight: 'bold' }}>+</Text>
-                </TouchableOpacity>
-            )}
-
             <Sidebar
                 visible={sidebarVisible}
                 onClose={() => setSidebarVisible(false)}
             />
+            {/* Create Recipe FAB */}
+            <TouchableOpacity
+                style={{
+                    position: 'absolute',
+                    bottom: 24,
+                    right: 24,
+                    backgroundColor: Colors.primary.main,
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: 8
+                }}
+                onPress={() => router.push('/recipes/create-choice')}
+            >
+                <Ionicons name="add" size={32} color="white" />
+            </TouchableOpacity>
         </View>
     );
 }

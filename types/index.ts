@@ -37,6 +37,10 @@ export interface User {
   // Stats
   currentStreak: number;
   totalMealsCompleted: number;
+
+  // Location
+  country?: string;
+  region?: string;
 }
 
 // ============================================================================
@@ -88,6 +92,14 @@ export interface Recipe {
 
   // Media
   imageUrl?: string;
+
+  // Location (for discovery)
+  location?: string;
+  region?: string;
+
+  // Creation tracking
+  creationMethod: 'manual' | 'ai-generated' | 'api';  // How recipe was created
+  aiPrompt?: string;  // Original prompt if AI-generated
 
   // Metadata
   createdAt: Timestamp;
@@ -155,6 +167,10 @@ export interface MealPlan {
   // Generation Settings
   selectedCuisines: string[];
   includeCustomRecipes: boolean;
+
+  // Creation tracking
+  creationMethod: 'manual' | 'ai-generated';
+  aiPrompt?: string;
 
   // Daily Meals
   days: DayPlan[];

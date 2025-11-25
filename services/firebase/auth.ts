@@ -83,6 +83,7 @@ export async function registerWithEmail(
         await createUserProfile(user.uid, {
             email: user.email || email,
             displayName,
+            name: displayName,
             createdAt: Timestamp.fromDate(new Date()),
             lastLoginAt: Timestamp.fromDate(new Date()),
             // Default values - will be updated during onboarding
@@ -179,6 +180,7 @@ export function useGoogleAuth() {
                 await createUserProfile(user.uid, {
                     email: user.email || '',
                     displayName: user.displayName || 'User',
+                    name: user.displayName || 'User',  // Also save as 'name' for compatibility
                     createdAt: Timestamp.fromDate(new Date()),
                     lastLoginAt: Timestamp.fromDate(new Date()),
                     dietType: 'None',

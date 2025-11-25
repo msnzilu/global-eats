@@ -14,6 +14,8 @@ interface UserProfile {
     phone: string;
     age: string;
     gender: string;
+    country?: string;
+    region?: string;
 }
 
 export default function PersonalInformation() {
@@ -24,6 +26,8 @@ export default function PersonalInformation() {
     const [phone, setPhone] = useState('');
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('Male');
+    const [country, setCountry] = useState('');
+    const [region, setRegion] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -54,6 +58,8 @@ export default function PersonalInformation() {
                 setPhone(userData.phone || '');
                 setAge(userData.age || '');
                 setGender(userData.gender || 'Male');
+                setCountry(userData.country || '');
+                setRegion(userData.region || '');
             } else {
                 console.log('⚠️ No user document found, using auth data');
                 // If no Firestore document exists, use Firebase Auth data
@@ -105,7 +111,9 @@ export default function PersonalInformation() {
                 email: email.trim(),
                 phone: phone.trim(),
                 age: age.trim(),
-                gender: gender
+                gender: gender,
+                country: country.trim(),
+                region: region.trim()
             };
 
             await setDoc(doc(db, 'users', user.uid), {
@@ -304,6 +312,62 @@ export default function PersonalInformation() {
                         placeholder="Enter your age"
                         placeholderTextColor={Colors.light.text.tertiary}
                         maxLength={3}
+                        editable={!isSaving}
+                    />
+                </View>
+
+                {/* Country */}
+                <View style={{ marginBottom: 20 }}>
+                    <Text style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: Colors.light.text.secondary,
+                        marginBottom: 8
+                    }}>
+                        Country
+                    </Text>
+                    <TextInput
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: 12,
+                            padding: 16,
+                            fontSize: 16,
+                            borderWidth: 1,
+                            borderColor: Colors.light.border,
+                            color: Colors.light.text.primary
+                        }}
+                        value={country}
+                        onChangeText={setCountry}
+                        placeholder="e.g., Italy, Japan, USA"
+                        placeholderTextColor={Colors.light.text.tertiary}
+                        editable={!isSaving}
+                    />
+                </View>
+
+                {/* Region */}
+                <View style={{ marginBottom: 20 }}>
+                    <Text style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: Colors.light.text.secondary,
+                        marginBottom: 8
+                    }}>
+                        Region / City
+                    </Text>
+                    <TextInput
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: 12,
+                            padding: 16,
+                            fontSize: 16,
+                            borderWidth: 1,
+                            borderColor: Colors.light.border,
+                            color: Colors.light.text.primary
+                        }}
+                        value={region}
+                        onChangeText={setRegion}
+                        placeholder="e.g., Tuscany, Tokyo, New York"
+                        placeholderTextColor={Colors.light.text.tertiary}
                         editable={!isSaving}
                     />
                 </View>

@@ -104,13 +104,13 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
         {
             title: 'Overview',
             items: [
-                { icon: 'stats-chart-outline', label: 'Dashboard', route: '/(tabs)/dashboard' },
                 { icon: 'person-outline', label: 'My Profile', route: '/profile/personal' },
             ]
         },
         {
             title: 'Account',
             items: [
+                { icon: 'card-outline', label: 'Subscription', route: '/subscription' },
                 { icon: 'settings-outline', label: 'Notification Settings', route: '/profile/notifications' },
                 { icon: 'lock-closed-outline', label: 'Privacy & Security', route: '/profile/privacy' },
             ]

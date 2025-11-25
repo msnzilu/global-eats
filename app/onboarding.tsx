@@ -1,32 +1,36 @@
+import { auth } from '@/services/firebase/config';
+import { updateOnboardingData } from '@/services/firebase/firestore';
+import { CookingTime, DietType, HealthGoal, OnboardingData } from '@/types';
 import { Colors } from '@/utils/constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Onboarding() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [currentStep, setCurrentStep] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Step 1: Dietary Preferences
-    const [dietType, setDietType] = useState('None');
+    const [dietType, setDietType] = useState<DietType>('None');
     const [allergies, setAllergies] = useState<string[]>([]);
 
     // Step 2: Health Goals
-    const [goal, setGoal] = useState('Maintain Weight');
+    const [goal, setGoal] = useState<HealthGoal>('Maintain Weight');
     const [targetCalories, setTargetCalories] = useState('2000');
 
     // Step 3: Meal Preferences
-    const [mealsPerDay, setMealsPerDay] = useState(2);
+    const [mealsPerDay, setMealsPerDay] = useState<1 | 2 | 3>(2);
     const [cuisines, setCuisines] = useState<string[]>(['Italian', 'Mexican']);
-    const [cookingTime, setCookingTime] = useState('30-45 min');
+    const [cookingTime, setCookingTime] = useState<CookingTime>('30-45 min');
 
-    const dietTypes = ['None', 'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo'];
+    const dietTypes: DietType[] = ['None', 'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo'];
     const commonAllergies = ['Peanuts', 'Tree Nuts', 'Dairy', 'Eggs', 'Soy', 'Wheat', 'Shellfish', 'Fish'];
-    const goals = ['Lose Weight', 'Maintain Weight', 'Gain Muscle', 'Improve Health'];
+    const goals: HealthGoal[] = ['Lose Weight', 'Maintain Weight', 'Gain Muscle', 'Improve Health'];
     const cuisineOptions = ['Italian', 'Mexican', 'Japanese', 'Chinese', 'Indian', 'Thai', 'Mediterranean', 'American'];
-    const cookingTimes = ['15-30 min', '30-45 min', '45-60 min', '60+ min'];
+    const cookingTimes: CookingTime[] = ['15-30 min', '30-45 min', '45-60 min', '60+ min'];
 
     const toggleItem = (item: string, list: string[], setList: (list: string[]) => void) => {
         if (list.includes(item)) {
@@ -36,12 +40,37 @@ export default function Onboarding() {
         }
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (currentStep < 2) {
             setCurrentStep(currentStep + 1);
         } else {
-            // TODO: Save to Firestore
-            router.replace('/(tabs)/planner');
+            // Save to Firestore
+            setIsSaving(true);
+            try {
+                const user = auth.currentUser;
+                if (!user) {
+                    Alert.alert('Error', 'You must be logged in to complete onboarding');
+                    setIsSaving(false);
+                    return;
+                }
+
+                const onboardingData: OnboardingData = {
+                    dietType,
+                    allergies,
+                    goal,
+                    targetCalories: parseInt(targetCalories),
+                    mealsPerDay,
+                    cuisines,
+                    cookingTime
+                };
+
+                await updateOnboardingData(user.uid, onboardingData);
+                router.replace('/(drawer)/(tabs)/planner');
+            } catch (error) {
+                console.error('Error saving onboarding data:', error);
+                Alert.alert('Error', 'Failed to save your preferences. Please try again.');
+                setIsSaving(false);
+            }
         }
     };
 
@@ -231,7 +260,7 @@ export default function Onboarding() {
                             Meals Per Day
                         </Text>
                         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-                            {[1, 2, 3].map((num) => (
+                            {([1, 2, 3] as const).map((num) => (
                                 <TouchableOpacity
                                     key={num}
                                     onPress={() => setMealsPerDay(num)}
@@ -265,7 +294,7 @@ export default function Onboarding() {
 
                         {/* Preferred Cuisines */}
                         <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
-                            Favorite Cuisines
+                            Preferred Cuisines
                         </Text>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
                             {cuisineOptions.map((cuisine) => (
@@ -332,15 +361,12 @@ export default function Onboarding() {
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
             {/* Progress Bar */}
             <View style={{
-                paddingTop: insets.top + 16,
-                paddingHorizontal: 24,
-                paddingBottom: 16
+                backgroundColor: Colors.primary.main,
+                paddingTop: insets.top + 20,
+                paddingBottom: 16,
+                paddingHorizontal: 24
             }}>
-                <View style={{
-                    flexDirection: 'row',
-                    gap: 8,
-                    marginBottom: 8
-                }}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
                     {[0, 1, 2].map((step) => (
                         <View
                             key={step}
@@ -348,21 +374,21 @@ export default function Onboarding() {
                                 flex: 1,
                                 height: 4,
                                 borderRadius: 2,
-                                backgroundColor: step <= currentStep ? Colors.primary.main : Colors.light.border
+                                backgroundColor: currentStep >= step ? 'white' : 'rgba(255,255,255,0.3)'
                             }}
                         />
                     ))}
                 </View>
                 <Text style={{
-                    fontSize: 12,
-                    color: Colors.light.text.secondary,
+                    color: 'white',
+                    fontSize: 14,
+                    marginTop: 12,
                     textAlign: 'center'
                 }}>
                     Step {currentStep + 1} of 3
                 </Text>
             </View>
 
-            {/* Content */}
             <ScrollView
                 contentContainerStyle={{
                     padding: 24,
@@ -391,40 +417,33 @@ export default function Onboarding() {
                         style={{
                             flex: 1,
                             backgroundColor: Colors.light.surface,
-                            paddingVertical: 14,
+                            padding: 16,
                             borderRadius: 12,
                             alignItems: 'center',
                             borderWidth: 1,
                             borderColor: Colors.light.border
                         }}
                         onPress={handleBack}
+                        disabled={isSaving}
                     >
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: '600',
-                            color: Colors.light.text.secondary
-                        }}>
+                        <Text style={{ color: Colors.light.text.primary, fontSize: 16, fontWeight: '600' }}>
                             Back
                         </Text>
                     </TouchableOpacity>
                 )}
-
                 <TouchableOpacity
                     style={{
                         flex: currentStep > 0 ? 2 : 1,
-                        backgroundColor: Colors.primary.main,
-                        paddingVertical: 14,
+                        backgroundColor: isSaving ? Colors.light.border : Colors.primary.main,
+                        padding: 16,
                         borderRadius: 12,
                         alignItems: 'center'
                     }}
                     onPress={handleNext}
+                    disabled={isSaving}
                 >
-                    <Text style={{
-                        fontSize: 16,
-                        fontWeight: '600',
-                        color: 'white'
-                    }}>
-                        {currentStep === 2 ? 'Get Started' : 'Next'}
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                        {isSaving ? 'Saving...' : currentStep === 2 ? 'Complete' : 'Next'}
                     </Text>
                 </TouchableOpacity>
             </View>

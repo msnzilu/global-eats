@@ -106,10 +106,10 @@ export default function Planner() {
                             paddingVertical: 16,
                             borderRadius: 12
                         }}
-                        onPress={() => router.push('/meal-plans/generate-plan')}
+                        onPress={() => router.push('/planner/create-choice')}
                     >
                         <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                            Generate Meal Plan
+                            Create Meal Plan
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -468,14 +468,14 @@ export default function Planner() {
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}
-                    onPress={() => router.push('/meal-plans/generate-plan')}
+                    onPress={() => router.push('/planner/create-choice')}
                 >
                     <Text style={{
                         fontSize: 14,
                         fontWeight: '600',
                         color: 'white'
                     }}>
-                        Generate New Plan
+                        Create New Plan
                     </Text>
                 </TouchableOpacity>
             </View>
