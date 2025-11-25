@@ -5,6 +5,7 @@ import { Recipe } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Timestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import {
     Alert,
@@ -19,7 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DayPlan {
-    date: Date;
+    date: Timestamp;
     dayName: string;
     meals: {
         recipeId: string;
@@ -51,7 +52,7 @@ export default function CreateManualMealPlan() {
     // Initialize days when duration changes
     useState(() => {
         const initialDays = Array.from({ length: duration }, (_, i) => ({
-            date: new Date(Date.now() + i * 24 * 60 * 60 * 1000),
+            date: Timestamp.fromDate(new Date(Date.now() + i * 24 * 60 * 60 * 1000)),
             dayName: `Day ${i + 1}`,
             meals: []
         }));
@@ -76,10 +77,10 @@ export default function CreateManualMealPlan() {
             recipeId: recipe.id,
             recipeName: recipe.name,
             mealType: activeMealType,
-            calories: recipe.calories || 0,
-            protein: recipe.protein || 0,
-            carbs: recipe.carbs || 0,
-            fat: recipe.fat || 0,
+            calories: recipe.nutrition.calories || 0,
+            protein: recipe.nutrition.protein || 0,
+            carbs: recipe.nutrition.carbs || 0,
+            fat: recipe.nutrition.fat || 0,
             cuisine: recipe.cuisine || 'International'
         });
 
@@ -132,8 +133,8 @@ export default function CreateManualMealPlan() {
             await createManualMealPlan(user.uid, {
                 name: planName,
                 duration,
-                startDate: new Date(),
-                endDate: new Date(Date.now() + duration * 24 * 60 * 60 * 1000),
+                startDate: Timestamp.fromDate(new Date()),
+                endDate: Timestamp.fromDate(new Date(Date.now() + duration * 24 * 60 * 60 * 1000)),
                 selectedCuisines: [], // Could be derived from meals
                 includeCustomRecipes: true,
                 days: processedDays as any,
@@ -228,7 +229,7 @@ export default function CreateManualMealPlan() {
                                         setDuration(d as 7 | 30);
                                         // Reset days array with new length
                                         setDays(Array.from({ length: d }, (_, i) => ({
-                                            date: new Date(Date.now() + i * 24 * 60 * 60 * 1000),
+                                            date: Timestamp.fromDate(new Date(Date.now() + i * 24 * 60 * 60 * 1000)),
                                             dayName: `Day ${i + 1}`,
                                             meals: []
                                         })));

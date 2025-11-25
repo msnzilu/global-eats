@@ -1,5 +1,6 @@
 // services/api/ai.ts
 import { MealPlan, Recipe } from '@/types';
+import { Timestamp } from 'firebase/firestore';
 
 // Placeholder for the actual OpenAI API URL. In production, use a backend proxy.
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -63,7 +64,7 @@ export async function generateRecipeFromPrompt(prompt: string): Promise<Generate
         if (!response.ok) {
             throw new Error(`OpenAI API Error: ${response.statusText}`);
         }
-        const data = await response.json();
+        const data = (await response.json()) as { choices: Array<{ message: { content: string } }> };
         const content = data.choices[0].message.content;
         const recipeData = JSON.parse(content);
         return { recipe: { ...recipeData, creationMethod: 'ai-generated', aiPrompt: prompt, isPublic: false } };
@@ -89,6 +90,7 @@ export const generateMealPlanFromPrompt = async (
                     selectedCuisines: ['International'],
                     includeCustomRecipes: customRecipes.length > 0,
                     days: Array.from({ length: duration }).map((_, i) => ({
+                        date: Timestamp.fromDate(new Date(Date.now() + i * 24 * 60 * 60 * 1000)),
                         dayName: `Day ${i + 1}`,
                         meals: [
                             { name: 'Mock Breakfast', type: 'breakfast', calories: 300, protein: 15 },
@@ -136,10 +138,10 @@ export const generateMealPlanFromPrompt = async (
             }),
         });
         if (!response.ok) {
-            const errData = await response.json();
+            const errData = (await response.json()) as { error?: { message?: string } };
             throw new Error(`OpenAI API Error: ${response.status} - ${errData.error?.message || response.statusText}`);
         }
-        const data = await response.json();
+        const data = (await response.json()) as { choices: Array<{ message: { content: string } }> };
         const content = data.choices[0].message.content;
         const mealPlan = JSON.parse(content);
         return mealPlan as MealPlan;
