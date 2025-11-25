@@ -1,28 +1,12 @@
 import Sidebar from '@/components/Sidebar';
 import SidebarToggle from '@/components/SidebarToggle';
+import { useMealPlan } from '@/hooks/useMealPlan';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-interface Meal {
-    id: string;
-    name: string;
-    cuisine: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    mealType: 'breakfast' | 'lunch' | 'dinner';
-}
-
-interface DayPlan {
-    date: string;
-    dayName: string;
-    meals: Meal[];
-}
 
 export default function Planner() {
     const router = useRouter();
@@ -30,70 +14,13 @@ export default function Planner() {
     const [sidebarVisible, setSidebarVisible] = useState(false);
     const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
-    // Mock 7-day meal plan - showing 1-3 meals per day based on user preference
-    const mockPlan: DayPlan[] = [
-        {
-            date: '2024-01-15',
-            dayName: 'Monday',
-            meals: [
-                { id: '1', name: 'Avocado Toast with Eggs', cuisine: 'American', calories: 320, protein: 18, carbs: 28, fat: 16, mealType: 'breakfast' },
-                { id: '2', name: 'Chicken Tikka Masala', cuisine: 'Indian', calories: 450, protein: 35, carbs: 25, fat: 20, mealType: 'lunch' },
-                { id: '3', name: 'Mediterranean Quinoa Bowl', cuisine: 'Mediterranean', calories: 380, protein: 18, carbs: 45, fat: 15, mealType: 'dinner' }
-            ]
-        },
-        {
-            date: '2024-01-16',
-            dayName: 'Tuesday',
-            meals: [
-                { id: '4', name: 'Thai Green Curry', cuisine: 'Thai', calories: 420, protein: 28, carbs: 32, fat: 22, mealType: 'lunch' },
-                { id: '5', name: 'Mexican Street Tacos', cuisine: 'Mexican', calories: 320, protein: 25, carbs: 28, fat: 12, mealType: 'dinner' }
-            ]
-        },
-        {
-            date: '2024-01-17',
-            dayName: 'Wednesday',
-            meals: [
-                { id: '6', name: 'Korean Bibimbap', cuisine: 'Korean', calories: 620, protein: 35, carbs: 75, fat: 18, mealType: 'lunch' }
-            ]
-        },
-        {
-            date: '2024-01-18',
-            dayName: 'Thursday',
-            meals: [
-                { id: '7', name: 'Greek Yogurt Parfait', cuisine: 'Greek', calories: 280, protein: 20, carbs: 35, fat: 8, mealType: 'breakfast' },
-                { id: '8', name: 'Japanese Teriyaki Salmon', cuisine: 'Japanese', calories: 400, protein: 35, carbs: 20, fat: 22, mealType: 'lunch' },
-                { id: '9', name: 'Greek Moussaka', cuisine: 'Greek', calories: 450, protein: 28, carbs: 30, fat: 24, mealType: 'dinner' }
-            ]
-        },
-        {
-            date: '2024-01-19',
-            dayName: 'Friday',
-            meals: [
-                { id: '10', name: 'Chinese Kung Pao Chicken', cuisine: 'Chinese', calories: 440, protein: 32, carbs: 35, fat: 20, mealType: 'lunch' },
-                { id: '11', name: 'French Ratatouille', cuisine: 'French', calories: 280, protein: 12, carbs: 38, fat: 10, mealType: 'dinner' }
-            ]
-        },
-        {
-            date: '2024-01-20',
-            dayName: 'Saturday',
-            meals: [
-                { id: '12', name: 'Protein Smoothie Bowl', cuisine: 'American', calories: 350, protein: 25, carbs: 42, fat: 12, mealType: 'breakfast' },
-                { id: '13', name: 'American BBQ Chicken', cuisine: 'American', calories: 500, protein: 40, carbs: 30, fat: 25, mealType: 'lunch' },
-                { id: '14', name: 'Vietnamese Pho', cuisine: 'Vietnamese', calories: 350, protein: 25, carbs: 40, fat: 8, mealType: 'dinner' }
-            ]
-        },
-        {
-            date: '2024-01-21',
-            dayName: 'Sunday',
-            meals: [
-                { id: '15', name: 'Spanish Paella', cuisine: 'Spanish', calories: 580, protein: 35, carbs: 60, fat: 20, mealType: 'lunch' }
-            ]
-        }
-    ];
+    // Use real meal plan data from Firestore
+    const { activePlan, loading } = useMealPlan();
 
-    const currentDay = mockPlan[currentDayIndex];
-    const dailyCalories = currentDay.meals.reduce((sum, m) => sum + m.calories, 0);
-    const dailyProtein = currentDay.meals.reduce((sum, m) => sum + m.protein, 0);
+    // Get current day data
+    const currentDay = activePlan?.days[currentDayIndex];
+    const dailyCalories = currentDay?.meals.reduce((sum, m) => sum + m.calories, 0) || 0;
+    const dailyProtein = currentDay?.meals.reduce((sum, m) => sum + m.protein, 0) || 0;
 
     const goToPreviousDay = () => {
         if (currentDayIndex > 0) {
@@ -102,11 +29,96 @@ export default function Planner() {
     };
 
     const goToNextDay = () => {
-        if (currentDayIndex < mockPlan.length - 1) {
+        if (activePlan && currentDayIndex < activePlan.days.length - 1) {
             setCurrentDayIndex(currentDayIndex + 1);
         }
     };
 
+    // Loading state
+    if (loading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+                <View style={{
+                    backgroundColor: Colors.primary.main,
+                    paddingTop: insets.top + 16,
+                    paddingBottom: 20,
+                    paddingHorizontal: 24
+                }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: 'white' }}>
+                            Meal Planner
+                        </Text>
+                        <SidebarToggle onPress={() => setSidebarVisible(true)} />
+                    </View>
+                </View>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <ActivityIndicator size="large" color={Colors.primary.main} />
+                    <Text style={{ marginTop: 16, fontSize: 16, color: Colors.light.text.secondary }}>
+                        Loading meal plan...
+                    </Text>
+                </View>
+                <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+            </View>
+        );
+    }
+
+    // No meal plan state
+    if (!activePlan || !currentDay) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+                <View style={{
+                    backgroundColor: Colors.primary.main,
+                    paddingTop: insets.top + 16,
+                    paddingBottom: 20,
+                    paddingHorizontal: 24,
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between'
+                }}>
+                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: 'white' }}>
+                        Meal Planner
+                    </Text>
+                    <SidebarToggle onPress={() => setSidebarVisible(true)} />
+                </View>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                    <Ionicons name="calendar-outline" size={80} color={Colors.light.text.tertiary} />
+                    <Text style={{
+                        fontSize: 22,
+                        fontWeight: 'bold',
+                        color: Colors.light.text.primary,
+                        marginTop: 24,
+                        marginBottom: 12
+                    }}>
+                        No Meal Plan Yet
+                    </Text>
+                    <Text style={{
+                        fontSize: 16,
+                        color: Colors.light.text.secondary,
+                        textAlign: 'center',
+                        marginBottom: 32
+                    }}>
+                        Generate a personalized meal plan to get started with your nutrition goals
+                    </Text>
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: Colors.primary.main,
+                            paddingHorizontal: 32,
+                            paddingVertical: 16,
+                            borderRadius: 12
+                        }}
+                        onPress={() => router.push('/meal-plans/generate-plan')}
+                    >
+                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                            Generate Meal Plan
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+                <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+            </View>
+        );
+    }
+
+    // Main planner view with real data
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
             {/* Header */}
@@ -185,18 +197,18 @@ export default function Planner() {
                         fontSize: 12,
                         color: Colors.light.text.secondary
                     }}>
-                        Day {currentDayIndex + 1} of {mockPlan.length}
+                        Day {currentDayIndex + 1} of {activePlan.days.length}
                     </Text>
                 </View>
 
                 <TouchableOpacity
                     onPress={goToNextDay}
-                    disabled={currentDayIndex === mockPlan.length - 1}
+                    disabled={currentDayIndex === activePlan.days.length - 1}
                     style={{
                         width: 40,
                         height: 40,
                         borderRadius: 20,
-                        backgroundColor: currentDayIndex === mockPlan.length - 1 ? Colors.light.surface : `${Colors.primary.main}15`,
+                        backgroundColor: currentDayIndex === activePlan.days.length - 1 ? Colors.light.surface : `${Colors.primary.main}15`,
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}
@@ -204,7 +216,7 @@ export default function Planner() {
                     <Ionicons
                         name="chevron-forward"
                         size={24}
-                        color={currentDayIndex === mockPlan.length - 1 ? Colors.light.text.tertiary : Colors.primary.main}
+                        color={currentDayIndex === activePlan.days.length - 1 ? Colors.light.text.tertiary : Colors.primary.main}
                     />
                 </TouchableOpacity>
             </View>
@@ -217,7 +229,7 @@ export default function Planner() {
                 marginTop: 16,
                 marginBottom: 8
             }}>
-                {mockPlan.map((_, index) => (
+                {activePlan.days.map((_, index) => (
                     <View
                         key={index}
                         style={{
@@ -244,7 +256,7 @@ export default function Planner() {
                 {/* Meals for Current Day */}
                 {currentDay.meals.map((meal) => (
                     <TouchableOpacity
-                        key={meal.id}
+                        key={meal.recipeId}
                         style={{
                             backgroundColor: 'white',
                             borderRadius: 16,
@@ -256,7 +268,7 @@ export default function Planner() {
                             shadowRadius: 8,
                             elevation: 3
                         }}
-                        onPress={() => router.push('/recipes/recipe-detail')}
+                        onPress={() => router.push(`/recipes/recipe-detail?id=${meal.recipeId}`)}
                         activeOpacity={0.7}
                     >
                         {/* Meal Type Badge */}
@@ -305,7 +317,7 @@ export default function Planner() {
                             color: Colors.light.text.primary,
                             marginBottom: 12
                         }}>
-                            {meal.name}
+                            {meal.recipeName}
                         </Text>
 
                         {/* Nutrition Info */}

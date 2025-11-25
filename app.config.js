@@ -57,8 +57,8 @@ module.exports = {
             EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
             EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
             eas: {
-                projectId: "f838be2c-6600-44ea-a98c-0c83cbc544ea"
+                projectId: "5bfff568-dc6b-4c53-874d-3b23015148fd"
             }
-        }
+        },
     }
 };

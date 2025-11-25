@@ -1,3 +1,5 @@
+import Sidebar from '@/components/Sidebar';
+import SidebarToggle from '@/components/SidebarToggle';
 import { useInventory } from '@/hooks/useInventory';
 import { InventoryItem } from '@/types';
 import { Colors } from '@/utils/constants';
@@ -22,6 +24,7 @@ export default function Inventory() {
     const { items, loading, error, deleteItem } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [sidebarVisible, setSidebarVisible] = useState(false);
 
     const categories = ['All', 'Protein', 'Grains', 'Produce', 'Dairy', 'Oils', 'Other'];
 
@@ -168,20 +171,25 @@ export default function Inventory() {
                 paddingBottom: 20,
                 paddingHorizontal: 24
             }}>
-                <Text style={{
-                    fontSize: 28,
-                    fontWeight: 'bold',
-                    color: 'white',
-                    marginBottom: 8
-                }}>
-                    Inventory
-                </Text>
-                <Text style={{
-                    fontSize: 14,
-                    color: 'rgba(255, 255, 255, 0.9)'
-                }}>
-                    {loading ? 'Loading...' : `${items.length} items in stock`}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{
+                            fontSize: 28,
+                            fontWeight: 'bold',
+                            color: 'white',
+                            marginBottom: 8
+                        }}>
+                            Inventory
+                        </Text>
+                        <Text style={{
+                            fontSize: 14,
+                            color: 'rgba(255, 255, 255, 0.9)'
+                        }}>
+                            {loading ? 'Loading...' : `${items.length} items in stock`}
+                        </Text>
+                    </View>
+                    <SidebarToggle onPress={() => setSidebarVisible(true)} />
+                </View>
             </View>
 
             {/* Error Message */}
@@ -364,6 +372,11 @@ export default function Inventory() {
             >
                 <Ionicons name="add" size={28} color="white" />
             </TouchableOpacity>
+
+            <Sidebar
+                visible={sidebarVisible}
+                onClose={() => setSidebarVisible(false)}
+            />
         </View>
     );
 }

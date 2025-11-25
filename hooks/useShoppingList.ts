@@ -1,10 +1,10 @@
-import { auth } from '@/services/firebase/config';
 import {
     addInventoryItem,
+    auth,
     removeItemsFromShoppingList,
     subscribeToActiveShoppingList,
     updateShoppingListItem
-} from '@/services/firebase/firestore';
+} from '@/services/firebase';
 import { ShoppingList } from '@/types';
 import { useEffect, useState } from 'react';
 

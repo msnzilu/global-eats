@@ -1,4 +1,6 @@
 import { NotificationCard } from '@/components/NotificationCard';
+import Sidebar from '@/components/Sidebar';
+import SidebarToggle from '@/components/SidebarToggle';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +12,7 @@ export default function NotificationsScreen() {
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
     const [refreshing, setRefreshing] = useState(false);
+    const [sidebarVisible, setSidebarVisible] = useState(false);
 
     const {
         notifications,
@@ -160,18 +163,21 @@ export default function NotificationsScreen() {
                     <Text style={{ fontSize: 28, fontWeight: 'bold', color: 'white' }}>
                         Notifications
                     </Text>
-                    {unreadCount > 0 && (
-                        <View style={{
-                            backgroundColor: 'rgba(255,255,255,0.3)',
-                            paddingHorizontal: 12,
-                            paddingVertical: 4,
-                            borderRadius: 12,
-                        }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: 'white' }}>
-                                {unreadCount} new
-                            </Text>
-                        </View>
-                    )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        {unreadCount > 0 && (
+                            <View style={{
+                                backgroundColor: 'rgba(255,255,255,0.3)',
+                                paddingHorizontal: 12,
+                                paddingVertical: 4,
+                                borderRadius: 12,
+                            }}>
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: 'white' }}>
+                                    {unreadCount} new
+                                </Text>
+                            </View>
+                        )}
+                        <SidebarToggle onPress={() => setSidebarVisible(true)} />
+                    </View>
                 </View>
 
                 {/* Tab Selector */}
@@ -310,6 +316,11 @@ export default function NotificationsScreen() {
                     />
                 }
                 showsVerticalScrollIndicator={false}
+            />
+
+            <Sidebar
+                visible={sidebarVisible}
+                onClose={() => setSidebarVisible(false)}
             />
         </View>
     );

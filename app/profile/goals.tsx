@@ -1,20 +1,67 @@
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { HealthGoal } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HealthGoals() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { profile, loading: profileLoading, updateHealthGoals } = useUserProfile();
 
-    const [selectedGoal, setSelectedGoal] = useState('Maintain Weight');
-    const [targetWeight, setTargetWeight] = useState('70');
-    const [currentWeight, setCurrentWeight] = useState('75');
+    const [selectedGoal, setSelectedGoal] = useState<HealthGoal>('Maintain Weight');
+    const [targetWeight, setTargetWeight] = useState('');
+    const [currentWeight, setCurrentWeight] = useState('');
     const [targetCalories, setTargetCalories] = useState('2000');
+    const [isSaving, setIsSaving] = useState(false);
 
-    const goals = ['Lose Weight', 'Maintain Weight', 'Gain Muscle', 'Improve Health'];
+    // Load initial data from profile
+    useEffect(() => {
+        if (profile) {
+            setSelectedGoal(profile.goal || 'Maintain Weight');
+            setTargetWeight(profile.targetWeight?.toString() || '');
+            setCurrentWeight(profile.currentWeight?.toString() || '');
+            setTargetCalories(profile.targetCalories?.toString() || '2000');
+        }
+    }, [profile]);
+
+    const goals: HealthGoal[] = ['Lose Weight', 'Maintain Weight', 'Gain Muscle', 'Improve Health'];
+
+    const handleSave = async () => {
+        if (!targetCalories) {
+            Alert.alert('Validation Error', 'Please enter a daily calorie target');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await updateHealthGoals({
+                goal: selectedGoal,
+                targetCalories: parseInt(targetCalories),
+                ...(currentWeight && { currentWeight: parseFloat(currentWeight) }),
+                ...(targetWeight && { targetWeight: parseFloat(targetWeight) })
+            });
+            Alert.alert('Success', 'Health goals updated successfully');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update health goals');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (profileLoading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={Colors.primary.main} />
+                <Text style={{ marginTop: 16, color: Colors.light.text.secondary }}>
+                    Loading goals...
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -97,6 +144,7 @@ export default function HealthGoals() {
                     value={currentWeight}
                     onChangeText={setCurrentWeight}
                     keyboardType="decimal-pad"
+                    placeholder="e.g. 75"
                 />
 
                 {/* Target Weight */}
@@ -120,6 +168,7 @@ export default function HealthGoals() {
                     value={targetWeight}
                     onChangeText={setTargetWeight}
                     keyboardType="decimal-pad"
+                    placeholder="e.g. 70"
                 />
 
                 {/* Daily Calorie Target */}
@@ -143,6 +192,7 @@ export default function HealthGoals() {
                     value={targetCalories}
                     onChangeText={setTargetCalories}
                     keyboardType="number-pad"
+                    placeholder="e.g. 2000"
                 />
 
                 {/* Info Card */}
@@ -177,15 +227,21 @@ export default function HealthGoals() {
             }}>
                 <TouchableOpacity
                     style={{
-                        backgroundColor: Colors.primary.main,
+                        backgroundColor: isSaving ? Colors.light.border : Colors.primary.main,
                         padding: 16,
                         borderRadius: 12,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center'
                     }}
-                    onPress={() => {/* TODO: Save */ }}
+                    onPress={handleSave}
+                    disabled={isSaving}
                 >
+                    {isSaving ? (
+                        <ActivityIndicator color="white" style={{ marginRight: 8 }} />
+                    ) : null}
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                        Save Goals
+                        {isSaving ? 'Saving...' : 'Save Goals'}
                     </Text>
                 </TouchableOpacity>
             </View>

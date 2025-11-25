@@ -1,8 +1,8 @@
-import { auth } from '@/services/firebase/config';
 import {
+    auth,
     getUserNotificationPreferences,
     updateNotificationPreferences
-} from '@/services/firebase/notifications';
+} from '@/services/firebase';
 import { NotificationPreferences } from '@/types';
 import { useEffect, useState } from 'react';
 

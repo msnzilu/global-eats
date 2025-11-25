@@ -1,19 +1,32 @@
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { DietType } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Dietary() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { profile, loading: profileLoading, updateDietaryPreferences } = useUserProfile();
 
-    const [selectedDiet, setSelectedDiet] = useState('None');
-    const [allergies, setAllergies] = useState<string[]>(['Peanuts', 'Shellfish']);
-    const [dislikes, setDislikes] = useState<string[]>(['Mushrooms']);
+    const [selectedDiet, setSelectedDiet] = useState<DietType>('None');
+    const [allergies, setAllergies] = useState<string[]>([]);
+    const [dislikes, setDislikes] = useState<string[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const dietTypes = ['None', 'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo', 'Gluten-Free'];
+    // Load initial data from profile
+    useEffect(() => {
+        if (profile) {
+            setSelectedDiet(profile.dietType || 'None');
+            setAllergies(profile.allergies || []);
+            setDislikes(profile.dislikes || []);
+        }
+    }, [profile]);
+
+    const dietTypes: DietType[] = ['None', 'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo'];
     const commonAllergies = ['Peanuts', 'Tree Nuts', 'Dairy', 'Eggs', 'Soy', 'Wheat', 'Shellfish', 'Fish'];
     const commonDislikes = ['Mushrooms', 'Onions', 'Cilantro', 'Olives', 'Tomatoes', 'Peppers'];
 
@@ -24,6 +37,33 @@ export default function Dietary() {
             setList([...list, item]);
         }
     };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            await updateDietaryPreferences({
+                dietType: selectedDiet,
+                allergies,
+                dislikes
+            });
+            Alert.alert('Success', 'Dietary preferences updated successfully');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update dietary preferences');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (profileLoading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={Colors.primary.main} />
+                <Text style={{ marginTop: 16, color: Colors.light.text.secondary }}>
+                    Loading preferences...
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -161,15 +201,21 @@ export default function Dietary() {
             }}>
                 <TouchableOpacity
                     style={{
-                        backgroundColor: Colors.primary.main,
+                        backgroundColor: isSaving ? Colors.light.border : Colors.primary.main,
                         padding: 16,
                         borderRadius: 12,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center'
                     }}
-                    onPress={() => {/* TODO: Save */ }}
+                    onPress={handleSave}
+                    disabled={isSaving}
                 >
+                    {isSaving ? (
+                        <ActivityIndicator color="white" style={{ marginRight: 8 }} />
+                    ) : null}
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                        Save Preferences
+                        {isSaving ? 'Saving...' : 'Save Preferences'}
                     </Text>
                 </TouchableOpacity>
             </View>

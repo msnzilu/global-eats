@@ -21,10 +21,13 @@ export interface User {
   // Onboarding
   dietType: DietType;
   allergies: string[];
+  dislikes?: string[];
 
   // Health Goals
   goal: HealthGoal;
   targetCalories: number;
+  currentWeight?: number;
+  targetWeight?: number;
 
   // Meal Preferences
   mealsPerDay: 1 | 2 | 3;

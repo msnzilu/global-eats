@@ -1,10 +1,10 @@
-import { auth } from '@/services/firebase/config';
 import {
     addInventoryItem,
+    auth,
     deleteInventoryItem,
     subscribeToInventoryItems,
     updateInventoryItem
-} from '@/services/firebase/firestore';
+} from '@/services/firebase';
 import { InventoryItem } from '@/types';
 import { useEffect, useState } from 'react';
 

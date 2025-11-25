@@ -1,20 +1,33 @@
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { CookingTime } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MealPreferences() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { profile, loading: profileLoading, updateMealPreferences } = useUserProfile();
 
-    const [mealsPerDay, setMealsPerDay] = useState(2);
-    const [selectedCuisines, setSelectedCuisines] = useState<string[]>(['Italian', 'Mexican', 'Japanese']);
-    const [cookingTime, setCookingTime] = useState('30-45 min');
+    const [mealsPerDay, setMealsPerDay] = useState<1 | 2 | 3>(2);
+    const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+    const [cookingTime, setCookingTime] = useState<CookingTime>('30-45 min');
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Load initial data from profile
+    useEffect(() => {
+        if (profile) {
+            setMealsPerDay(profile.mealsPerDay || 2);
+            setSelectedCuisines(profile.preferredCuisines || []);
+            setCookingTime(profile.maxCookingTime || '30-45 min');
+        }
+    }, [profile]);
 
     const cuisines = ['Italian', 'Mexican', 'Japanese', 'Chinese', 'Indian', 'Thai', 'Mediterranean', 'American', 'French', 'Korean'];
-    const cookingTimes = ['15-30 min', '30-45 min', '45-60 min', '60+ min'];
+    const cookingTimes: CookingTime[] = ['15-30 min', '30-45 min', '45-60 min', '60+ min'];
 
     const toggleCuisine = (cuisine: string) => {
         if (selectedCuisines.includes(cuisine)) {
@@ -23,6 +36,33 @@ export default function MealPreferences() {
             setSelectedCuisines([...selectedCuisines, cuisine]);
         }
     };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            await updateMealPreferences({
+                mealsPerDay,
+                preferredCuisines: selectedCuisines,
+                maxCookingTime: cookingTime
+            });
+            Alert.alert('Success', 'Meal preferences updated successfully');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update meal preferences');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (profileLoading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={Colors.primary.main} />
+                <Text style={{ marginTop: 16, color: Colors.light.text.secondary }}>
+                    Loading preferences...
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -61,7 +101,7 @@ export default function MealPreferences() {
                     {[1, 2, 3].map((num) => (
                         <TouchableOpacity
                             key={num}
-                            onPress={() => setMealsPerDay(num)}
+                            onPress={() => setMealsPerDay(num as 1 | 2 | 3)}
                             style={{
                                 flex: 1,
                                 padding: 20,
@@ -171,15 +211,21 @@ export default function MealPreferences() {
             }}>
                 <TouchableOpacity
                     style={{
-                        backgroundColor: Colors.primary.main,
+                        backgroundColor: isSaving ? Colors.light.border : Colors.primary.main,
                         padding: 16,
                         borderRadius: 12,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center'
                     }}
-                    onPress={() => {/* TODO: Save */ }}
+                    onPress={handleSave}
+                    disabled={isSaving}
                 >
+                    {isSaving ? (
+                        <ActivityIndicator color="white" style={{ marginRight: 8 }} />
+                    ) : null}
                     <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                        Save Preferences
+                        {isSaving ? 'Saving...' : 'Save Preferences'}
                     </Text>
                 </TouchableOpacity>
             </View>

@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { createShoppingList } from './firestore';
+import { createMealPlanNotification } from './notifications';
 
 // ============================================================================
 // MEAL PLAN FUNCTIONS
@@ -132,7 +133,7 @@ async function generateShoppingListFromPlan(
     for (const day of plan.days) {
         for (const meal of day.meals) {
             // Fetch the recipe to get ingredients
-            const recipeRef = doc(db, `recipes/${userId}/userRecipes/${meal.recipeId}`);
+            const recipeRef = doc(db, 'recipes', meal.recipeId);
             const recipeSnap = await getDoc(recipeRef);
 
             if (recipeSnap.exists()) {
@@ -223,24 +224,32 @@ export async function generateMealPlan(
         } as ShoppingList;
 
         // 3. Fetch available recipes
-        const customRecipesRef = collection(db, `recipes/${userId}/userRecipes`);
-        const discoveredRecipesRef = collection(db, `recipes/${userId}/discoveredRecipes`);
-
-        const [customSnap, discoveredSnap] = await Promise.all([
-            getDocs(customRecipesRef),
-            getDocs(discoveredRecipesRef)
-        ]);
-
         let availableRecipes: Recipe[] = [];
 
+        // Fetch custom recipes from Firestore (correct path: recipes collection, filtered by userId)
         if (options.includeCustomRecipes) {
+            const recipesRef = collection(db, 'recipes');
+            const customQuery = query(
+                recipesRef,
+                where('source', '==', 'custom'),
+                where('userId', '==', userId)
+            );
+            const customSnap = await getDocs(customQuery);
+
             availableRecipes.push(...customSnap.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             } as Recipe)));
         }
 
-        availableRecipes.push(...discoveredSnap.docs.map(doc => ({
+        // Fetch Spoonacular recipes from Firestore cache
+        const spoonacularQuery = query(
+            collection(db, 'recipes'),
+            where('source', '==', 'spoonacular')
+        );
+        const spoonacularSnap = await getDocs(spoonacularQuery);
+
+        availableRecipes.push(...spoonacularSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         } as Recipe)));
@@ -361,7 +370,20 @@ export async function generateMealPlan(
         // 7. Generate shopping list
         await generateShoppingListFromPlan(userId, planData as any, inventory);
 
-        // 8. Create notification for user
+        // 8. Update the newly created shopping list's mealPlanId from 'pending' to the actual plan ID
+        try {
+            const shoppingListsRef = collection(db, `shoppingLists/${userId}/lists`);
+            const pendingQuery = query(shoppingListsRef, where('mealPlanId', '==', 'pending'));
+            const pendingSnap = await getDocs(pendingQuery);
+            if (!pendingSnap.empty) {
+                const pendingDoc = pendingSnap.docs[0];
+                await updateDoc(pendingDoc.ref, { mealPlanId: planDoc.id });
+            }
+        } catch (updateError) {
+            console.warn('⚠️ Failed to update shopping list with plan ID:', updateError);
+        }
+
+        // 9. Create notification for user
         try {
             await createMealPlanNotification(userId, planDoc.id, options.duration);
         } catch (notifError) {

@@ -163,6 +163,26 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
                             paddingBottom: 24,
                             paddingHorizontal: 20
                         }}>
+                            {/* Close Button */}
+                            <TouchableOpacity
+                                onPress={onClose}
+                                style={{
+                                    position: 'absolute',
+                                    top: insets.top + 20,
+                                    right: 20,
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 18,
+                                    backgroundColor: 'rgba(255,255,255,0.2)',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 10,
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="close" size={24} color="white" />
+                            </TouchableOpacity>
+
                             <View style={{
                                 width: 70,
                                 height: 70,

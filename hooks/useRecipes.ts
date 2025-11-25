@@ -1,11 +1,10 @@
-import { auth } from '@/services/firebase/config';
 import {
     addRecipe,
+    auth,
     deleteRecipe,
-    subscribeToDiscoveredRecipes,
     subscribeToUserRecipes,
     updateRecipe
-} from '@/services/firebase/firestore';
+} from '@/services/firebase';
 import { Recipe } from '@/types';
 import { useEffect, useState } from 'react';
 
@@ -51,21 +50,28 @@ export function useRecipes(): UseRecipesReturn {
             }
         );
 
-        // Subscribe to discovered recipes
-        const unsubscribeDiscovered = subscribeToDiscoveredRecipes(
-            (recipes) => {
+        // Load discovered recipes from Firestore cache
+        const loadDiscoveredRecipes = async () => {
+            try {
+                const { getCachedSpoonacularRecipes, initializeSpoonacularCache } = await import('@/services/api/recipe-sync');
+
+                // Initialize cache if it doesn't exist (first time only)
+                await initializeSpoonacularCache();
+
+                // Get recipes from cache
+                const recipes = await getCachedSpoonacularRecipes();
                 setDiscoveredRecipes(recipes);
-            },
-            (err) => {
+            } catch (err) {
                 console.error('Error loading discovered recipes:', err);
                 // Don't set error state for discovered recipes, just log it
             }
-        );
+        };
+
+        loadDiscoveredRecipes();
 
         // Cleanup subscriptions on unmount
         return () => {
             unsubscribeCustom();
-            unsubscribeDiscovered();
         };
     }, [currentUser?.uid]);
 

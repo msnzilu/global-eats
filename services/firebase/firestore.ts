@@ -10,6 +10,8 @@ import {
     query,
     serverTimestamp,
     setDoc,
+    Timestamp,
+    Unsubscribe,
     updateDoc,
     where
 } from 'firebase/firestore';
@@ -120,10 +122,6 @@ export async function updateLastLogin(userId: string): Promise<void> {
 // ============================================================================
 // INVENTORY MANAGEMENT
 // ============================================================================
-
-import {
-    Unsubscribe
-} from 'firebase/firestore';
 
 /**
  * Add a new inventory item to user's inventory
@@ -504,6 +502,7 @@ export async function createShoppingList(
     listData: Omit<ShoppingList, 'id' | 'createdAt'>
 ): Promise<string> {
     try {
+
         const listsRef = collection(db, `shoppingLists/${userId}/lists`);
         const docRef = await addDoc(listsRef, {
             ...listData,
@@ -582,7 +581,7 @@ export async function updateShoppingListItem(
                 ? {
                     ...item,
                     ...updates,
-                    checkedAt: updates.isChecked ? serverTimestamp() : null
+                    checkedAt: updates.isChecked ? Timestamp.now() : null
                 }
                 : item
         );
@@ -698,13 +697,3 @@ export async function removeItemsFromShoppingList(
         throw error instanceof Error ? error : new Error('Failed to remove items');
     }
 }
-
-// ============================================================================
-// MEAL PLAN FUNCTIONS
-// ============================================================================
-
-// Re-export meal plan functions from meal-plan-generator
-export {
-    deactivateOldPlans, deleteMealPlan, generateMealPlan, getMealPlanById, subscribeToActiveMealPlan, updateMealStatus
-} from './meal-plan-generator';
-

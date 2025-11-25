@@ -16,11 +16,11 @@ export default function SidebarToggle({ onPress }: SidebarToggleProps) {
                 backgroundColor: 'rgba(255,255,255,0.2)',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginRight: 16
+                marginRight: 10,
             }}
             activeOpacity={0.7}
         >
-            <Ionicons name="menu" size={24} color="white" />
+            <Ionicons name="settings-outline" size={24} color="white" />
         </TouchableOpacity>
     );
 }

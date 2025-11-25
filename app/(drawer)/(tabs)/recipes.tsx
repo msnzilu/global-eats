@@ -1,3 +1,5 @@
+import Sidebar from '@/components/Sidebar';
+import SidebarToggle from '@/components/SidebarToggle';
 import { useRecipes } from '@/hooks/useRecipes';
 import { Recipe } from '@/types';
 import { Colors } from '@/utils/constants';
@@ -14,6 +16,7 @@ export default function Recipes() {
     const { myRecipes, discoveredRecipes, loading, error, deleteRecipe } = useRecipes();
     const [activeTab, setActiveTab] = useState<RecipeType>('my-recipes');
     const [searchQuery, setSearchQuery] = useState('');
+    const [sidebarVisible, setSidebarVisible] = useState(false);
 
     const displayedRecipes = activeTab === 'my-recipes' ? myRecipes : discoveredRecipes;
 
@@ -186,14 +189,16 @@ export default function Recipes() {
                 paddingBottom: 20,
                 paddingHorizontal: 24
             }}>
-                <Text style={{
-                    fontSize: 28,
-                    fontWeight: 'bold',
-                    color: 'white',
-                    marginBottom: 16
-                }}>
-                    Recipes
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <Text style={{
+                        fontSize: 28,
+                        fontWeight: 'bold',
+                        color: 'white'
+                    }}>
+                        Recipes
+                    </Text>
+                    <SidebarToggle onPress={() => setSidebarVisible(true)} />
+                </View>
 
                 {/* Search Bar */}
                 <View style={{
@@ -375,6 +380,11 @@ export default function Recipes() {
                     <Text style={{ fontSize: 28, color: 'white', fontWeight: 'bold' }}>+</Text>
                 </TouchableOpacity>
             )}
+
+            <Sidebar
+                visible={sidebarVisible}
+                onClose={() => setSidebarVisible(false)}
+            />
         </View>
     );
 }

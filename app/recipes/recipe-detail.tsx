@@ -1,6 +1,6 @@
 import { useRecipes } from '@/hooks/useRecipes';
+import { getRecipeById } from '@/services/firebase';
 import { auth } from '@/services/firebase/config';
-import { getRecipeById } from '@/services/firebase/firestore';
 import { Recipe } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ export default function RecipeDetail() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
-    const { deleteRecipe } = useRecipes();
+    const { deleteRecipe, addRecipe, myRecipes } = useRecipes();
 
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [loading, setLoading] = useState(true);
@@ -32,13 +32,39 @@ export default function RecipeDetail() {
         const fetchRecipe = async () => {
             try {
                 setLoading(true);
-                const data = await getRecipeById(recipeId);
-                if (data) {
-                    setRecipe(data);
+
+                // Check if this is a Spoonacular recipe (ID starts with "spoon_")
+                if (recipeId.startsWith('spoon_')) {
+                    // Extract the numeric ID and fetch from Spoonacular
+                    const numericId = parseInt(recipeId.replace('spoon_', ''));
+                    const { getSpoonacularRecipeById } = await import('@/services/api/spoonacular');
+                    const data = await getSpoonacularRecipeById(numericId);
+
+                    if (data) {
+                        setRecipe(data);
+                    } else {
+                        setError('Recipe not found');
+                    }
                 } else {
-                    setError('Recipe not found');
+                    // Check if this is a mock recipe ID (simple numeric string)
+                    const isMockId = /^\d+$/.test(recipeId);
+
+                    if (isMockId) {
+                        setError('This is a preview meal. Please generate a real meal plan to view recipe details.');
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Fetch from Firestore for custom recipes
+                    const data = await getRecipeById(recipeId);
+                    if (data) {
+                        setRecipe(data);
+                    } else {
+                        setError('Recipe not found');
+                    }
                 }
             } catch (err: any) {
+                console.error('Error loading recipe:', err);
                 setError(err.message || 'Failed to load recipe');
             } finally {
                 setLoading(false);
@@ -72,6 +98,49 @@ export default function RecipeDetail() {
                 }
             ]
         );
+    };
+
+    const handleSaveAsCustom = async () => {
+        if (!recipe || !currentUser) return;
+
+        // Check for duplicates
+        const isDuplicate = myRecipes.some(r => r.name.toLowerCase() === recipe.name.toLowerCase());
+        if (isDuplicate) {
+            Alert.alert('Already Saved', 'You already have a custom recipe with this name.');
+            return;
+        }
+
+        try {
+            // Create a new custom recipe based on the current recipe
+            const customRecipe = {
+                name: recipe.name,
+                description: recipe.description || '',
+                cuisine: recipe.cuisine || 'International',
+                difficulty: recipe.difficulty || 'Medium',
+                prepTimeMin: recipe.prepTimeMin || 30,
+                cookTimeMin: recipe.cookTimeMin || 30,
+                servings: recipe.servings || 4,
+                ingredients: recipe.ingredients || [],
+                instructions: recipe.instructions || '',
+                nutrition: recipe.nutrition || {
+                    calories: 0,
+                    protein: 0,
+                    carbs: 0,
+                    fat: 0
+                },
+                imageUrl: recipe.imageUrl || '',
+                isPublic: false
+            };
+
+            await addRecipe(customRecipe);
+            Alert.alert(
+                'Success',
+                'Recipe saved to your custom recipes!',
+                [{ text: 'OK' }]
+            );
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to save recipe');
+        }
     };
 
     if (loading) {
@@ -246,23 +315,17 @@ export default function RecipeDetail() {
                         flexDirection: 'row',
                         justifyContent: 'space-between'
                     }}>
-                        <NutritionItem label="Calories" value={recipe.nutrition.calories.toString()} color={Colors.primary.main} />
-                        <NutritionItem label="Protein" value={`${recipe.nutrition.protein}g`} color={Colors.secondary.main} />
-                        <NutritionItem label="Carbs" value={`${recipe.nutrition.carbs}g`} color={Colors.primary.dark} />
-                        <NutritionItem label="Fat" value={`${recipe.nutrition.fat}g`} color="#F59E0B" />
+                        <NutritionItem label="Calories" value={recipe.nutrition.calories.toString()} />
+                        <NutritionItem label="Protein" value={`${recipe.nutrition.protein}g`} />
+                        <NutritionItem label="Carbs" value={`${recipe.nutrition.carbs}g`} />
+                        <NutritionItem label="Fat" value={`${recipe.nutrition.fat}g`} />
                     </View>
                 </View>
 
                 {/* Ingredients */}
-                <View style={{
-                    backgroundColor: 'white',
-                    marginHorizontal: 24,
-                    borderRadius: 16,
-                    padding: 16,
-                    marginBottom: 16
-                }}>
+                <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
                     <Text style={{
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: 'bold',
                         color: Colors.light.text.primary,
                         marginBottom: 12
@@ -270,51 +333,36 @@ export default function RecipeDetail() {
                         Ingredients
                     </Text>
                     {recipe.ingredients.map((ingredient, index) => (
-                        <View
-                            key={index}
-                            style={{
-                                flexDirection: 'row',
-                                paddingVertical: 8,
-                                borderBottomWidth: index < recipe.ingredients.length - 1 ? 1 : 0,
-                                borderBottomColor: Colors.light.border
-                            }}
-                        >
+                        <View key={index} style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            marginBottom: 8,
+                            paddingVertical: 8,
+                            borderBottomWidth: 1,
+                            borderBottomColor: Colors.light.border
+                        }}>
                             <View style={{
                                 width: 6,
                                 height: 6,
                                 borderRadius: 3,
                                 backgroundColor: Colors.primary.main,
-                                marginTop: 8,
                                 marginRight: 12
                             }} />
                             <Text style={{
-                                flex: 1,
-                                fontSize: 15,
-                                color: Colors.light.text.primary
+                                fontSize: 16,
+                                color: Colors.light.text.primary,
+                                flex: 1
                             }}>
-                                {ingredient.name}
-                            </Text>
-                            <Text style={{
-                                fontSize: 14,
-                                color: Colors.light.text.secondary,
-                                fontWeight: '500'
-                            }}>
-                                {ingredient.amount} {ingredient.unit}
+                                {ingredient.amount} {ingredient.unit} {ingredient.name}
                             </Text>
                         </View>
                     ))}
                 </View>
 
                 {/* Instructions */}
-                <View style={{
-                    backgroundColor: 'white',
-                    marginHorizontal: 24,
-                    borderRadius: 16,
-                    padding: 16,
-                    marginBottom: 16
-                }}>
+                <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
                     <Text style={{
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: 'bold',
                         color: Colors.light.text.primary,
                         marginBottom: 12
@@ -322,59 +370,12 @@ export default function RecipeDetail() {
                         Instructions
                     </Text>
                     <Text style={{
-                        fontSize: 15,
-                        color: Colors.light.text.secondary,
+                        fontSize: 16,
+                        color: Colors.light.text.primary,
                         lineHeight: 24
                     }}>
                         {recipe.instructions}
                     </Text>
-                </View>
-
-                {/* Action Buttons */}
-                <View style={{ paddingHorizontal: 24, paddingBottom: 24, gap: 12 }}>
-                    <TouchableOpacity
-                        onPress={() => router.push('/recipes/cooking-timer')}
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: Colors.primary.main,
-                            paddingVertical: 16,
-                            borderRadius: 12,
-                            gap: 8
-                        }}
-                    >
-                        <Ionicons name="timer-outline" size={24} color="white" />
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: '600',
-                            color: 'white'
-                        }}>
-                            Start Cooking Timer
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => router.push('/recipes/swap-meal')}
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: Colors.secondary.main,
-                            paddingVertical: 16,
-                            borderRadius: 12,
-                            gap: 8
-                        }}
-                    >
-                        <Ionicons name="swap-horizontal" size={24} color="white" />
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: '600',
-                            color: 'white'
-                        }}>
-                            Swap This Meal
-                        </Text>
-                    </TouchableOpacity>
                 </View>
             </ScrollView>
 
@@ -417,7 +418,7 @@ export default function RecipeDetail() {
                             borderRadius: 12,
                             alignItems: 'center'
                         }}
-                        onPress={() => {/* TODO: Implement fork */ }}
+                        onPress={handleSaveAsCustom}
                     >
                         <Text style={{
                             fontSize: 16,
@@ -444,24 +445,29 @@ function InfoCard({ icon, label, value }: InfoCardProps) {
         <View style={{
             flex: 1,
             backgroundColor: 'white',
-            borderRadius: 12,
             padding: 12,
-            alignItems: 'center'
+            borderRadius: 12,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2
         }}>
-            <Ionicons name={icon} size={20} color={Colors.primary.main} style={{ marginBottom: 4 }} />
+            <Ionicons name={icon} size={24} color={Colors.primary.main} style={{ marginBottom: 4 }} />
             <Text style={{
-                fontSize: 14,
-                fontWeight: 'bold',
-                color: Colors.light.text.primary,
+                fontSize: 12,
+                color: Colors.light.text.tertiary,
                 marginBottom: 2
             }}>
-                {value}
+                {label}
             </Text>
             <Text style={{
-                fontSize: 11,
-                color: Colors.light.text.secondary
+                fontSize: 14,
+                fontWeight: '600',
+                color: Colors.light.text.primary
             }}>
-                {label}
+                {value}
             </Text>
         </View>
     );
@@ -470,25 +476,24 @@ function InfoCard({ icon, label, value }: InfoCardProps) {
 interface NutritionItemProps {
     label: string;
     value: string;
-    color: string;
 }
 
-function NutritionItem({ label, value, color }: NutritionItemProps) {
+function NutritionItem({ label, value }: NutritionItemProps) {
     return (
         <View style={{ alignItems: 'center' }}>
             <Text style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: color,
+                fontSize: 12,
+                color: Colors.light.text.tertiary,
                 marginBottom: 4
             }}>
-                {value}
+                {label}
             </Text>
             <Text style={{
-                fontSize: 12,
-                color: Colors.light.text.secondary
+                fontSize: 16,
+                fontWeight: '600',
+                color: Colors.primary.main
             }}>
-                {label}
+                {value}
             </Text>
         </View>
     );

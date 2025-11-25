@@ -1,10 +1,10 @@
-import { auth } from '@/services/firebase/config';
 import {
+    auth,
     deleteMealPlan,
     generateMealPlan,
     subscribeToActiveMealPlan,
     updateMealStatus
-} from '@/services/firebase/firestore';
+} from '@/services/firebase';
 import { MealPlan } from '@/types';
 import { useEffect, useState } from 'react';
 

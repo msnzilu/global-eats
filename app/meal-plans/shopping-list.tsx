@@ -1,11 +1,9 @@
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { auth } from '@/services/firebase/config';
-import { createShoppingList } from '@/services/firebase/firestore';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ShoppingList() {
@@ -19,7 +17,6 @@ export default function ShoppingList() {
         addCheckedToInventory,
         clearCheckedItems
     } = useShoppingList();
-    const [creating, setCreating] = useState(false);
 
     const currentUser = auth.currentUser;
 
@@ -61,79 +58,34 @@ export default function ShoppingList() {
         );
     };
 
-    const createSampleList = async () => {
-        if (!currentUser) {
-            Alert.alert('Error', 'You must be logged in to create a shopping list');
+    const handleGeneratePlan = () => {
+        router.push('/meal-plans/generate-plan');
+    };
+
+    const handleShare = async () => {
+        if (!shoppingList || items.length === 0) {
+            Alert.alert('Empty List', 'There are no items to share');
             return;
         }
 
-        setCreating(true);
         try {
-            await createShoppingList(currentUser.uid, {
-                mealPlanId: 'sample',
-                items: [
-                    {
-                        id: `item_${Date.now()}_1`,
-                        name: 'Chicken Breast',
-                        quantity: 1000,
-                        unit: 'g',
-                        category: 'Protein',
-                        isChecked: false,
-                        fromRecipes: []
-                    },
-                    {
-                        id: `item_${Date.now()}_2`,
-                        name: 'Tomatoes',
-                        quantity: 500,
-                        unit: 'g',
-                        category: 'Produce',
-                        isChecked: false,
-                        fromRecipes: []
-                    },
-                    {
-                        id: `item_${Date.now()}_3`,
-                        name: 'Rice',
-                        quantity: 2,
-                        unit: 'kg',
-                        category: 'Grains',
-                        isChecked: false,
-                        fromRecipes: []
-                    },
-                    {
-                        id: `item_${Date.now()}_4`,
-                        name: 'Yogurt',
-                        quantity: 400,
-                        unit: 'ml',
-                        category: 'Dairy',
-                        isChecked: false,
-                        fromRecipes: []
-                    },
-                    {
-                        id: `item_${Date.now()}_5`,
-                        name: 'Onions',
-                        quantity: 3,
-                        unit: 'pieces',
-                        category: 'Produce',
-                        isChecked: false,
-                        fromRecipes: []
-                    },
-                    {
-                        id: `item_${Date.now()}_6`,
-                        name: 'Olive Oil',
-                        quantity: 250,
-                        unit: 'ml',
-                        category: 'Oils',
-                        isChecked: false,
-                        fromRecipes: []
-                    }
-                ],
-                isActive: true
+            // Group items by category for better formatting
+            const groupedText = categories.map(category => {
+                const categoryItems = groupedItems[category]
+                    .map(item => `  ${item.isChecked ? '✓' : '○'} ${item.name} - ${item.quantity} ${item.unit}`)
+                    .join('\n');
+                return `${category.toUpperCase()}\n${categoryItems}`;
+            }).join('\n\n');
+
+            const message = `🛒 Shopping List\n\n${groupedText}\n\n📊 Total: ${items.length} items (${checkedCount} checked)`;
+
+            await Share.share({
+                message,
+                title: 'Shopping List'
             });
-            Alert.alert('Success', 'Sample shopping list created!');
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to create shopping list');
-        } finally {
-            setCreating(false);
+            console.error('Error sharing:', err);
+            Alert.alert('Error', 'Failed to share shopping list');
         }
     };
 
@@ -314,20 +266,15 @@ export default function ShoppingList() {
                                         paddingVertical: 12,
                                         borderRadius: 12
                                     }}
-                                    onPress={createSampleList}
-                                    disabled={creating}
+                                    onPress={handleGeneratePlan}
                                 >
-                                    {creating ? (
-                                        <ActivityIndicator color="white" />
-                                    ) : (
-                                        <Text style={{
-                                            color: 'white',
-                                            fontSize: 16,
-                                            fontWeight: '600'
-                                        }}>
-                                            Create Sample List
-                                        </Text>
-                                    )}
+                                    <Text style={{
+                                        color: 'white',
+                                        fontSize: 16,
+                                        fontWeight: '600'
+                                    }}>
+                                        Generate Meal Plan
+                                    </Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -390,27 +337,30 @@ export default function ShoppingList() {
             )}
 
             {/* Share Button (FAB) */}
-            <TouchableOpacity
-                style={{
-                    position: 'absolute',
-                    bottom: checkedCount > 0 ? 160 + insets.bottom : 24 + insets.bottom,
-                    right: 24,
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: Colors.secondary.main,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 8
-                }}
-                onPress={() => {/* TODO: Implement share */ }}
-            >
-                <Ionicons name="share-outline" size={24} color="white" />
-            </TouchableOpacity>
+            {items.length > 0 && (
+                <TouchableOpacity
+                    style={{
+                        position: 'absolute',
+                        bottom: checkedCount > 0 ? 160 + insets.bottom : 24 + insets.bottom,
+                        right: 24,
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: Colors.secondary.main,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 8,
+                        elevation: 8
+                    }}
+                    onPress={handleShare}
+                    activeOpacity={0.8}
+                >
+                    <Ionicons name="share-outline" size={24} color="white" />
+                </TouchableOpacity>
+            )}
         </View>
     );
 }

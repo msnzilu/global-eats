@@ -1,39 +1,17 @@
-import { Tabs, useNavigation } from 'expo-router';
-import React from 'react';
+import { Tabs } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
-import { DrawerActions } from '@react-navigation/native';
-import { TouchableOpacity } from 'react-native';
-
-function HeaderMenuButton() {
-    const navigation = useNavigation();
-
-    return (
-        <TouchableOpacity
-            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-            style={{
-                marginRight: 16,
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                alignItems: 'center',
-                justifyContent: 'center',
-            }}
-            activeOpacity={0.7}
-        >
-            <Ionicons name="person-circle-outline" size={28} color="white" />
-        </TouchableOpacity>
-    );
-}
 
 export default function TabLayout() {
     const colorScheme = useColorScheme();
     const insets = useSafeAreaInsets();
+    const { unreadCount } = useNotifications();
 
     return (
         <Tabs
@@ -99,15 +77,37 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
+                name="dashboard"
+                options={{
+                    title: 'Stats',
+                    tabBarIcon: ({ color, focused }) => (
+                        <Ionicons
+                            name={focused ? "stats-chart" : "stats-chart-outline"}
+                            size={24}
+                            color={color}
+                        />
+                    ),
+                }}
+            />
+            <Tabs.Screen
                 name="notifications"
                 options={{
                     title: 'Notifications',
                     tabBarIcon: ({ color, focused }) => (
-                        <Ionicons
-                            name={focused ? "notifications" : "notifications-outline"}
-                            size={24}
-                            color={color}
-                        />
+                        <View style={styles.iconContainer}>
+                            <Ionicons
+                                name={focused ? "notifications" : "notifications-outline"}
+                                size={24}
+                                color={color}
+                            />
+                            {unreadCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>
+                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
                     ),
                 }}
             />
@@ -118,12 +118,34 @@ export default function TabLayout() {
                     href: null, // Hide from tab bar, accessible via sidebar
                 }}
             />
-            <Tabs.Screen
-                name="dashboard"
-                options={{
-                    href: null, // Hide from tab bar, accessible via sidebar
-                }}
-            />
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    iconContainer: {
+        position: 'relative',
+        width: 24,
+        height: 24,
+    },
+    badge: {
+        position: 'absolute',
+        top: -6,
+        right: -10,
+        backgroundColor: Colors.error,
+        borderRadius: 10,
+        minWidth: 18,
+        height: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 2,
+        borderColor: 'white',
+    },
+    badgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+});

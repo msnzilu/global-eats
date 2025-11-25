@@ -16,6 +16,15 @@
                 "simulator": true
             }
         },
-        "production": {}
+        "production": {
+            "env": {
+                "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCusdY6i8a6gcn-i-qPzBiryK8Z6MuzElE",
+                "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "globaleats-d696d.firebaseapp.com",
+                "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "globaleats-d696d",
+                "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "globaleats-d696d.firebasestorage.app",
+                "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "339359050250",
+                "EXPO_PUBLIC_FIREBASE_APP_ID": "1:339359050250:web:df5d3bb9d8b6f313cc4df3"
+            }
+        }
     }
 }
