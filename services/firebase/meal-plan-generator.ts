@@ -539,3 +539,44 @@ export async function deleteMealPlan(
         throw new Error('Failed to delete meal plan');
     }
 }
+
+/**
+ * Get all meal plans for a user (active and inactive)
+ */
+export async function getAllMealPlans(
+    userId: string
+): Promise<MealPlan[]> {
+    try {
+        const plansRef = collection(db, `mealPlans/${userId}/plans`);
+        const q = query(plansRef, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        } as MealPlan));
+    } catch (error) {
+        console.error('Error fetching meal plans:', error);
+        throw new Error('Failed to fetch meal plans');
+    }
+}
+
+/**
+ * Set a specific meal plan as active (deactivates all others)
+ */
+export async function setActiveMealPlan(
+    userId: string,
+    planId: string
+): Promise<void> {
+    try {
+        // Deactivate all plans first
+        await deactivateOldPlans(userId);
+
+        // Activate the selected plan
+        const planRef = doc(db, `mealPlans/${userId}/plans/${planId}`);
+        await updateDoc(planRef, { isActive: true });
+    } catch (error) {
+        console.error('Error setting active meal plan:', error);
+        throw new Error('Failed to set active meal plan');
+    }
+}

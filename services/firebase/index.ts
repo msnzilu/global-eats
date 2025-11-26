@@ -17,7 +17,7 @@ export {
 
 // Export all meal plan functions
 export {
-    deactivateOldPlans, deleteMealPlan, generateMealPlan, getMealPlanById, subscribeToActiveMealPlan, updateMealStatus
+    deactivateOldPlans, deleteMealPlan, generateMealPlan, getAllMealPlans, getMealPlanById, setActiveMealPlan, subscribeToActiveMealPlan, updateMealStatus
 } from './meal-plan-generator';
 
 // Export all notification functions

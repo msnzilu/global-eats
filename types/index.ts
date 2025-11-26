@@ -299,3 +299,18 @@ export interface NotificationPreferences {
   recipeUpdates: boolean;
   shoppingReminders: boolean;
 }
+
+// ============================================================================
+// SUBSCRIPTION TYPES
+// ============================================================================
+
+export interface SubscriptionPlan {
+  tier: 'free' | 'premium' | 'family';
+  name: string;
+  price: number;
+  billingPeriod: 'monthly' | 'yearly';
+  features: string[];
+  popular?: boolean;
+  savings?: string;
+  trialDays?: number;
+}

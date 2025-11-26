@@ -2,6 +2,8 @@ import {
     auth,
     deleteMealPlan,
     generateMealPlan,
+    getAllMealPlans,
+    setActiveMealPlan,
     subscribeToActiveMealPlan,
     updateMealStatus
 } from '@/services/firebase';
@@ -17,10 +19,12 @@ interface UseMealPlanReturn {
     markMealComplete: (dayIndex: number, mealIndex: number) => Promise<void>;
     deletePlan: (planId: string) => Promise<void>;
     refreshPlan: () => void;
+    getAllPlans: () => Promise<MealPlan[]>;
+    setActivePlan: (planId: string) => Promise<void>;
 }
 
 export function useMealPlan(): UseMealPlanReturn {
-    const [activePlan, setActivePlan] = useState<MealPlan | null>(null);
+    const [activePlan, setActivePlanState] = useState<MealPlan | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [generating, setGenerating] = useState(false);
@@ -41,7 +45,7 @@ export function useMealPlan(): UseMealPlanReturn {
         const unsubscribe = subscribeToActiveMealPlan(
             currentUser.uid,
             (plan) => {
-                setActivePlan(plan);
+                setActivePlanState(plan);
                 setLoading(false);
             },
             (err) => {
@@ -121,6 +125,20 @@ export function useMealPlan(): UseMealPlanReturn {
         setLoading(true);
     };
 
+    const getAllPlans = async (): Promise<MealPlan[]> => {
+        if (!currentUser) {
+            throw new Error('User not authenticated');
+        }
+        return await getAllMealPlans(currentUser.uid);
+    };
+
+    const setActivePlan = async (planId: string): Promise<void> => {
+        if (!currentUser) {
+            throw new Error('User not authenticated');
+        }
+        await setActiveMealPlan(currentUser.uid, planId);
+    };
+
     return {
         activePlan,
         loading,
@@ -130,5 +148,7 @@ export function useMealPlan(): UseMealPlanReturn {
         markMealComplete,
         deletePlan,
         refreshPlan,
+        getAllPlans,
+        setActivePlan,
     };
 }

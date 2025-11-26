@@ -4,7 +4,7 @@ import { useMealPlan } from '@/hooks/useMealPlan';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,23 @@ export default function Planner() {
 
     // Use real meal plan data from Firestore
     const { activePlan, loading } = useMealPlan();
+
+    // Automatically set current day based on today's date
+    useEffect(() => {
+        if (activePlan && activePlan.days.length > 0) {
+            const today = new Date();
+            const startDate = activePlan.startDate.toDate ? activePlan.startDate.toDate() : new Date(activePlan.startDate as any);
+            const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (daysDiff >= 0 && daysDiff < activePlan.days.length) {
+                setCurrentDayIndex(daysDiff);
+            } else if (daysDiff >= activePlan.days.length) {
+                setCurrentDayIndex(activePlan.days.length - 1);
+            } else {
+                setCurrentDayIndex(0);
+            }
+        }
+    }, [activePlan?.id]);
 
     // Get current day data
     const currentDay = activePlan?.days[currentDayIndex];
@@ -268,7 +285,15 @@ export default function Planner() {
                             shadowRadius: 8,
                             elevation: 3
                         }}
-                        onPress={() => router.push(`/recipes/recipe-detail?id=${meal.recipeId}`)}
+                        onPress={() => router.push({
+                            pathname: '/recipes/recipe-detail',
+                            params: {
+                                id: meal.recipeId,
+                                fromPlanner: 'true',
+                                dayIndex: currentDayIndex.toString(),
+                                mealType: meal.mealType
+                            }
+                        })}
                         activeOpacity={0.7}
                     >
                         {/* Meal Type Badge */}

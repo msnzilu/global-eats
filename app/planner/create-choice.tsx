@@ -28,6 +28,41 @@ export default function CreateMealPlanChoice() {
             </View>
 
             <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
+                {/* View History Button */}
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: 'white',
+                        borderRadius: 12,
+                        padding: 16,
+                        marginBottom: 32,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderWidth: 1,
+                        borderColor: Colors.light.border,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 4,
+                        elevation: 1
+                    }}
+                    onPress={() => router.push('/meal-plans/history')}
+                    activeOpacity={0.7}
+                >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="time-outline" size={24} color={Colors.primary.main} />
+                        <Text style={{
+                            marginLeft: 12,
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: Colors.light.text.primary
+                        }}>
+                            View Plan History
+                        </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={Colors.light.text.tertiary} />
+                </TouchableOpacity>
+
                 <Text style={{
                     fontSize: 24,
                     fontWeight: 'bold',

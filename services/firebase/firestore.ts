@@ -516,20 +516,34 @@ export async function createShoppingList(
 }
 
 /**
- * Subscribe to active shopping list with real-time updates
+ * Subscribe to shopping list for a specific meal plan with real-time updates
  */
 export function subscribeToActiveShoppingList(
     userId: string,
     onUpdate: (list: ShoppingList | null) => void,
-    onError?: (error: Error) => void
+    onError?: (error: Error) => void,
+    mealPlanId?: string  // Optional meal plan ID filter
 ): () => void {
     try {
         const listsRef = collection(db, `shoppingLists/${userId}/lists`);
-        const q = query(
-            listsRef,
-            where('isActive', '==', true),
-            orderBy('createdAt', 'desc')
-        );
+
+        let q;
+        if (mealPlanId) {
+            // Filter by specific meal plan
+            q = query(
+                listsRef,
+                where('mealPlanId', '==', mealPlanId),
+                where('isActive', '==', true),
+                orderBy('createdAt', 'desc')
+            );
+        } else {
+            // Fallback to any active list (backward compatible)
+            q = query(
+                listsRef,
+                where('isActive', '==', true),
+                orderBy('createdAt', 'desc')
+            );
+        }
 
         return onSnapshot(
             q,

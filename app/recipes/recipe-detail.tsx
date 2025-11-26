@@ -22,6 +22,11 @@ export default function RecipeDetail() {
     const recipeId = params.id as string;
     const currentUser = auth.currentUser;
 
+    // Detect if accessed from planner
+    const fromPlanner = params.fromPlanner === 'true';
+    const dayIndex = params.dayIndex ? parseInt(params.dayIndex as string) : undefined;
+    const mealType = params.mealType as string | undefined;
+
     useEffect(() => {
         if (!recipeId) {
             setError('No recipe ID provided');
@@ -141,6 +146,14 @@ export default function RecipeDetail() {
         } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to save recipe');
         }
+    };
+
+    const handleSwap = () => {
+        router.push(`/recipes/swap-meal?recipeId=${recipeId}&dayIndex=${dayIndex}&mealType=${mealType}`);
+    };
+
+    const handleTimer = () => {
+        router.push(`/recipes/cooking-timer?recipeId=${recipeId}`);
     };
 
     if (loading) {
@@ -379,7 +392,7 @@ export default function RecipeDetail() {
                 </View>
             </ScrollView>
 
-            {/* Bottom Action Button */}
+            {/* Bottom Action Buttons */}
             <View style={{
                 position: 'absolute',
                 bottom: 0,
@@ -392,42 +405,87 @@ export default function RecipeDetail() {
                 borderTopWidth: 1,
                 borderTopColor: Colors.light.border
             }}>
-                {isCustom && isOwner ? (
-                    <TouchableOpacity
-                        style={{
-                            backgroundColor: '#EF4444',
-                            paddingVertical: 14,
-                            borderRadius: 12,
-                            alignItems: 'center'
-                        }}
-                        onPress={handleDelete}
-                    >
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: '600',
-                            color: 'white'
-                        }}>
-                            Delete Recipe
-                        </Text>
-                    </TouchableOpacity>
+                {fromPlanner ? (
+                    // Show Swap and Timer buttons when accessed from planner
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                backgroundColor: Colors.light.surface,
+                                paddingVertical: 14,
+                                borderRadius: 12,
+                                alignItems: 'center',
+                                borderWidth: 1,
+                                borderColor: Colors.light.border
+                            }}
+                            onPress={handleSwap}
+                        >
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: '600',
+                                color: Colors.light.text.primary
+                            }}>
+                                Swap Meal
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                backgroundColor: Colors.primary.main,
+                                paddingVertical: 14,
+                                borderRadius: 12,
+                                alignItems: 'center'
+                            }}
+                            onPress={handleTimer}
+                        >
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: '600',
+                                color: 'white'
+                            }}>
+                                Start Timer
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : (
-                    <TouchableOpacity
-                        style={{
-                            backgroundColor: Colors.primary.main,
-                            paddingVertical: 14,
-                            borderRadius: 12,
-                            alignItems: 'center'
-                        }}
-                        onPress={handleSaveAsCustom}
-                    >
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: '600',
-                            color: 'white'
-                        }}>
-                            Save as Custom Recipe
-                        </Text>
-                    </TouchableOpacity>
+                    // Show Delete or Save button when not from planner
+                    isCustom && isOwner ? (
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: '#EF4444',
+                                paddingVertical: 14,
+                                borderRadius: 12,
+                                alignItems: 'center'
+                            }}
+                            onPress={handleDelete}
+                        >
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: '600',
+                                color: 'white'
+                            }}>
+                                Delete Recipe
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: Colors.primary.main,
+                                paddingVertical: 14,
+                                borderRadius: 12,
+                                alignItems: 'center'
+                            }}
+                            onPress={handleSaveAsCustom}
+                        >
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: '600',
+                                color: 'white'
+                            }}>
+                                Save as Custom Recipe
+                            </Text>
+                        </TouchableOpacity>
+                    )
                 )}
             </View>
         </View>

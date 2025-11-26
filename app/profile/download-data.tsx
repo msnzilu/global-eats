@@ -1,12 +1,27 @@
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function DownloadData() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const [loading, setLoading] = useState(false);
+
+    const handleRequestDownload = () => {
+        setLoading(true);
+        // Simulate API call
+        setTimeout(() => {
+            setLoading(false);
+            Alert.alert(
+                'Request Received',
+                'We have received your request. You will receive an email with your data within 48 hours.',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+        }, 1500);
+    };
 
     const dataCategories = [
         {
@@ -173,16 +188,21 @@ export default function DownloadData() {
             }}>
                 <TouchableOpacity
                     style={{
-                        backgroundColor: Colors.primary.main,
+                        backgroundColor: loading ? Colors.light.border : Colors.primary.main,
                         padding: 16,
                         borderRadius: 12,
                         alignItems: 'center'
                     }}
-                    onPress={() => {/* TODO: Request data download */ }}
+                    onPress={handleRequestDownload}
+                    disabled={loading}
                 >
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                        Request Data Download
-                    </Text>
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                            Request Data Download
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

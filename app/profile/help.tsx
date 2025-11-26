@@ -10,31 +10,37 @@ export default function Help() {
 
     const helpTopics = [
         {
+            id: 'getting-started',
             icon: 'help-circle',
             title: 'Getting Started',
             description: 'Learn the basics of GlobalEats'
         },
         {
+            id: 'meal-planning',
             icon: 'restaurant',
             title: 'Meal Planning',
             description: 'How to create and customize meal plans'
         },
         {
+            id: 'managing-inventory',
             icon: 'basket',
             title: 'Managing Inventory',
             description: 'Track your ingredients and groceries'
         },
         {
+            id: 'using-recipes',
             icon: 'book',
             title: 'Using Recipes',
             description: 'Find, save, and create recipes'
         },
         {
+            id: 'shopping-lists',
             icon: 'cart',
             title: 'Shopping Lists',
             description: 'Generate and manage shopping lists'
         },
         {
+            id: 'account-settings',
             icon: 'settings',
             title: 'Account Settings',
             description: 'Manage your profile and preferences'
@@ -86,6 +92,10 @@ export default function Help() {
                             flexDirection: 'row',
                             alignItems: 'center'
                         }}
+                        onPress={() => router.push({
+                            pathname: '/profile/help-detail',
+                            params: { id: topic.id }
+                        })}
                     >
                         <View style={{
                             width: 48,

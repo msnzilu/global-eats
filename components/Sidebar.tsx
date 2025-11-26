@@ -105,6 +105,7 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
             title: 'Overview',
             items: [
                 { icon: 'person-outline', label: 'My Profile', route: '/profile/personal' },
+                { icon: 'calendar-outline', label: 'My Meal Plans', route: '/meal-plans/history' },
             ]
         },
         {

@@ -1,3 +1,4 @@
+import { useMealPlan } from '@/hooks/useMealPlan';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { auth } from '@/services/firebase/config';
 import { Colors } from '@/utils/constants';
@@ -9,6 +10,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function ShoppingList() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+
+    // Get active meal plan
+    const { activePlan } = useMealPlan();
+
+    // Pass active plan ID to shopping list hook
     const {
         shoppingList,
         loading,
@@ -16,7 +22,7 @@ export default function ShoppingList() {
         toggleItem,
         addCheckedToInventory,
         clearCheckedItems
-    } = useShoppingList();
+    } = useShoppingList(activePlan?.id);
 
     const currentUser = auth.currentUser;
 

@@ -2,13 +2,28 @@ import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TwoFactorAuth() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [isEnabled, setIsEnabled] = useState(false);
+
+    const handleToggle = (value: boolean) => {
+        setIsEnabled(value);
+        if (value) {
+            Alert.alert(
+                '2FA Enabled',
+                'Two-factor authentication has been enabled. You will now be asked for a verification code when logging in from a new device.'
+            );
+        } else {
+            Alert.alert(
+                '2FA Disabled',
+                'Two-factor authentication has been disabled. Your account is now less secure.'
+            );
+        }
+    };
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -53,7 +68,7 @@ export default function TwoFactorAuth() {
                         </View>
                         <Switch
                             value={isEnabled}
-                            onValueChange={setIsEnabled}
+                            onValueChange={handleToggle}
                             trackColor={{ false: '#D1D5DB', true: Colors.primary.main }}
                         />
                     </View>
@@ -95,6 +110,7 @@ export default function TwoFactorAuth() {
                         alignItems: 'center'
                     }}
                     disabled={!isEnabled}
+                    onPress={() => Alert.alert('Coming Soon', 'SMS configuration coming soon.')}
                 >
                     <View style={{
                         width: 48,
@@ -140,6 +156,7 @@ export default function TwoFactorAuth() {
                         alignItems: 'center'
                     }}
                     disabled={!isEnabled}
+                    onPress={() => Alert.alert('Coming Soon', 'Authenticator app configuration coming soon.')}
                 >
                     <View style={{
                         width: 48,

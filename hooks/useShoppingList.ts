@@ -18,7 +18,7 @@ interface UseShoppingListReturn {
     refreshList: () => void;
 }
 
-export function useShoppingList(): UseShoppingListReturn {
+export function useShoppingList(activePlanId?: string): UseShoppingListReturn {
     const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export function useShoppingList(): UseShoppingListReturn {
         setLoading(true);
         setError(null);
 
-        // Subscribe to active shopping list
+        // Subscribe to shopping list for active meal plan
         const unsubscribe = subscribeToActiveShoppingList(
             currentUser.uid,
             (list) => {
@@ -45,12 +45,13 @@ export function useShoppingList(): UseShoppingListReturn {
             (err) => {
                 setError(err.message);
                 setLoading(false);
-            }
+            },
+            activePlanId  // Pass the active plan ID
         );
 
         // Cleanup subscription on unmount
         return unsubscribe;
-    }, [currentUser?.uid]);
+    }, [currentUser?.uid, activePlanId]);  // Re-subscribe when plan changes
 
     const toggleItem = async (itemId: string): Promise<void> => {
         if (!currentUser || !shoppingList) {
