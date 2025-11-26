@@ -21,7 +21,11 @@ export default function Planner() {
     useEffect(() => {
         if (activePlan && activePlan.days.length > 0) {
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
             const startDate = activePlan.startDate.toDate ? activePlan.startDate.toDate() : new Date(activePlan.startDate as any);
+            startDate.setHours(0, 0, 0, 0);
+
             const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
             if (daysDiff >= 0 && daysDiff < activePlan.days.length) {
@@ -208,7 +212,12 @@ export default function Planner() {
                         color: Colors.light.text.primary,
                         marginBottom: 4
                     }}>
-                        {currentDay.dayName}
+                        {(() => {
+                            const startDate = activePlan.startDate.toDate ? activePlan.startDate.toDate() : new Date(activePlan.startDate as any);
+                            const date = new Date(startDate);
+                            date.setDate(startDate.getDate() + currentDayIndex);
+                            return new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(date);
+                        })()}
                     </Text>
                     <Text style={{
                         fontSize: 12,

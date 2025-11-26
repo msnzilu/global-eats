@@ -1,12 +1,15 @@
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 export default function CreateRecipeChoice() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { profile } = useUserProfile();
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -109,9 +112,23 @@ export default function CreateRecipeChoice() {
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 8,
-                        elevation: 3
+                        elevation: 3,
+                        opacity: profile?.subscriptionTier === 'free' ? 0.8 : 1
                     }}
-                    onPress={() => router.push('/recipes/create-ai')}
+                    onPress={() => {
+                        if (profile?.subscriptionTier === 'free') {
+                            Alert.alert(
+                                'Premium Feature',
+                                'AI Recipe Generation is available for Premium users only.',
+                                [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Upgrade', onPress: () => router.push('/subscription') }
+                                ]
+                            );
+                        } else {
+                            router.push('/recipes/create-ai');
+                        }
+                    }}
                     activeOpacity={0.7}
                 >
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
@@ -124,17 +141,33 @@ export default function CreateRecipeChoice() {
                             justifyContent: 'center',
                             marginRight: 16
                         }}>
-                            <Text style={{ fontSize: 28 }}>✨</Text>
+                            {profile?.subscriptionTier === 'free' ? (
+                                <Ionicons name="lock-closed" size={28} color={Colors.secondary.main} />
+                            ) : (
+                                <Text style={{ fontSize: 28 }}>✨</Text>
+                            )}
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={{
-                                fontSize: 20,
-                                fontWeight: 'bold',
-                                color: Colors.light.text.primary,
-                                marginBottom: 4
-                            }}>
-                                Auto Generate
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text style={{
+                                    fontSize: 20,
+                                    fontWeight: 'bold',
+                                    color: Colors.light.text.primary,
+                                    marginBottom: 4
+                                }}>
+                                    Auto Generate
+                                </Text>
+                                {profile?.subscriptionTier === 'free' && (
+                                    <View style={{
+                                        backgroundColor: Colors.secondary.main,
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 2,
+                                        borderRadius: 4
+                                    }}>
+                                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>PREMIUM</Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={{ fontSize: 14, color: Colors.light.text.secondary }}>
                                 Let us do the work for you
                             </Text>

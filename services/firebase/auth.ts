@@ -83,7 +83,6 @@ export async function registerWithEmail(
         await createUserProfile(user.uid, {
             email: user.email || email,
             displayName,
-            name: displayName,
             createdAt: Timestamp.fromDate(new Date()),
             lastLoginAt: Timestamp.fromDate(new Date()),
             // Default values - will be updated during onboarding
@@ -96,6 +95,7 @@ export async function registerWithEmail(
             maxCookingTime: '30-45 min',
             currentStreak: 0,
             totalMealsCompleted: 0,
+            subscriptionTier: 'free',
         });
 
         return {
@@ -180,7 +180,6 @@ export function useGoogleAuth() {
                 await createUserProfile(user.uid, {
                     email: user.email || '',
                     displayName: user.displayName || 'User',
-                    name: user.displayName || 'User',  // Also save as 'name' for compatibility
                     createdAt: Timestamp.fromDate(new Date()),
                     lastLoginAt: Timestamp.fromDate(new Date()),
                     dietType: 'None',
@@ -192,6 +191,7 @@ export function useGoogleAuth() {
                     maxCookingTime: '30-45 min',
                     currentStreak: 0,
                     totalMealsCompleted: 0,
+                    subscriptionTier: 'free',
                 });
             } else {
                 console.log('📝 Updating last login...');

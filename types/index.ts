@@ -41,6 +41,9 @@ export interface User {
   // Location
   country?: string;
   region?: string;
+
+  // Subscription
+  subscriptionTier: 'free' | 'premium' | 'family';
 }
 
 // ============================================================================

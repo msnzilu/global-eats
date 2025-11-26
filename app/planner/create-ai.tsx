@@ -79,7 +79,7 @@ export default function CreateAIMealPlan() {
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
                 <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'white' }}>
-                    AI Meal Planner
+                    Auto Meal Planner
                 </Text>
             </View>
 

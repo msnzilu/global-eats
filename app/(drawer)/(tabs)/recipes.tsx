@@ -299,7 +299,11 @@ export default function Recipes() {
                         flex: 1,
                         paddingVertical: 12,
                         borderRadius: 10,
-                        backgroundColor: activeTab === 'discover' ? Colors.primary.main : 'transparent'
+                        backgroundColor: activeTab === 'discover' ? Colors.primary.main : 'transparent',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6
                     }}
                     onPress={() => setActiveTab('discover')}
                     activeOpacity={0.7}
@@ -312,123 +316,187 @@ export default function Recipes() {
                     }}>
                         Discover
                     </Text>
+                    {profile?.subscriptionTier === 'free' && (
+                        <Ionicons
+                            name="lock-closed"
+                            size={14}
+                            color={activeTab === 'discover' ? 'white' : Colors.light.text.secondary}
+                        />
+                    )}
                 </TouchableOpacity>
             </View>
 
             {/* Discovery Filter (Local/International) - Only show on Discover tab */}
             {activeTab === 'discover' && (
-                <View style={{ marginHorizontal: 24, marginTop: 16 }}>
-                    {/* Local/International Toggle */}
-                    <View style={{
-                        flexDirection: 'row',
-                        backgroundColor: Colors.light.surface,
-                        borderRadius: 10,
-                        padding: 4,
-                        marginBottom: 12
-                    }}>
-                        <TouchableOpacity
-                            style={{
-                                flex: 1,
-                                paddingVertical: 10,
-                                borderRadius: 8,
-                                backgroundColor: discoveryFilter === 'local' ? Colors.secondary.main : 'transparent'
-                            }}
-                            onPress={() => {
-                                setDiscoveryFilter('local');
-                                setLocationSearch(''); // Clear location search when switching
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={{
-                                textAlign: 'center',
-                                fontSize: 14,
-                                fontWeight: '600',
-                                color: discoveryFilter === 'local' ? 'white' : Colors.light.text.secondary
-                            }}>
-                                🏠 Local
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{
-                                flex: 1,
-                                paddingVertical: 10,
-                                borderRadius: 8,
-                                backgroundColor: discoveryFilter === 'international' ? Colors.secondary.main : 'transparent'
-                            }}
-                            onPress={() => {
-                                setDiscoveryFilter('international');
-                                setLocationSearch(''); // Clear location search when switching
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={{
-                                textAlign: 'center',
-                                fontSize: 14,
-                                fontWeight: '600',
-                                color: discoveryFilter === 'international' ? 'white' : Colors.light.text.secondary
-                            }}>
-                                🌍 International
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Location Search (only for local filter) */}
-                    {discoveryFilter === 'local' && (
+                <>
+                    {profile?.subscriptionTier === 'free' ? (
                         <View style={{
-                            flexDirection: 'row',
+                            flex: 1,
                             alignItems: 'center',
-                            backgroundColor: 'white',
-                            borderRadius: 10,
-                            paddingHorizontal: 14,
-                            paddingVertical: 10,
-                            borderWidth: 1,
-                            borderColor: Colors.light.border
+                            justifyContent: 'center',
+                            paddingHorizontal: 32,
+                            marginTop: 60
                         }}>
-                            <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
-                            <TextInput
-                                placeholder="Search location (e.g., Kenya, Rome)..."
-                                placeholderTextColor={Colors.light.text.tertiary}
-                                value={locationSearch}
-                                onChangeText={setLocationSearch}
+                            <View style={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: 40,
+                                backgroundColor: `${Colors.primary.main}15`,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: 24
+                            }}>
+                                <Ionicons name="lock-closed" size={40} color={Colors.primary.main} />
+                            </View>
+                            <Text style={{
+                                fontSize: 24,
+                                fontWeight: 'bold',
+                                color: Colors.light.text.primary,
+                                textAlign: 'center',
+                                marginBottom: 12
+                            }}>
+                                Discover Premium Recipes
+                            </Text>
+                            <Text style={{
+                                fontSize: 16,
+                                color: Colors.light.text.secondary,
+                                textAlign: 'center',
+                                marginBottom: 32,
+                                lineHeight: 24
+                            }}>
+                                Upgrade to Premium to access thousands of curated recipes from around the world and use AI generation.
+                            </Text>
+                            <TouchableOpacity
                                 style={{
-                                    flex: 1,
-                                    fontSize: 14,
-                                    color: Colors.light.text.primary
+                                    backgroundColor: Colors.primary.main,
+                                    paddingHorizontal: 32,
+                                    paddingVertical: 16,
+                                    borderRadius: 12,
+                                    width: '100%',
+                                    alignItems: 'center'
                                 }}
-                            />
-                            {locationSearch.length > 0 && (
-                                <TouchableOpacity onPress={() => setLocationSearch('')}>
-                                    <Text style={{ fontSize: 18, color: Colors.light.text.secondary }}>✕</Text>
+                                onPress={() => router.push('/subscription')}
+                            >
+                                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
+                                    Upgrade to Premium
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={{ marginHorizontal: 24, marginTop: 16 }}>
+                            {/* Local/International Toggle */}
+                            <View style={{
+                                flexDirection: 'row',
+                                backgroundColor: Colors.light.surface,
+                                borderRadius: 10,
+                                padding: 4,
+                                marginBottom: 12
+                            }}>
+                                <TouchableOpacity
+                                    style={{
+                                        flex: 1,
+                                        paddingVertical: 10,
+                                        borderRadius: 8,
+                                        backgroundColor: discoveryFilter === 'local' ? Colors.secondary.main : 'transparent'
+                                    }}
+                                    onPress={() => {
+                                        setDiscoveryFilter('local');
+                                        setLocationSearch(''); // Clear location search when switching
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={{
+                                        textAlign: 'center',
+                                        fontSize: 14,
+                                        fontWeight: '600',
+                                        color: discoveryFilter === 'local' ? 'white' : Colors.light.text.secondary
+                                    }}>
+                                        🏠 Local
+                                    </Text>
                                 </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={{
+                                        flex: 1,
+                                        paddingVertical: 10,
+                                        borderRadius: 8,
+                                        backgroundColor: discoveryFilter === 'international' ? Colors.secondary.main : 'transparent'
+                                    }}
+                                    onPress={() => {
+                                        setDiscoveryFilter('international');
+                                        setLocationSearch(''); // Clear location search when switching
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={{
+                                        textAlign: 'center',
+                                        fontSize: 14,
+                                        fontWeight: '600',
+                                        color: discoveryFilter === 'international' ? 'white' : Colors.light.text.secondary
+                                    }}>
+                                        🌍 International
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Location Search (only for local filter) */}
+                            {discoveryFilter === 'local' && (
+                                <View style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    backgroundColor: 'white',
+                                    borderRadius: 10,
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 10,
+                                    borderWidth: 1,
+                                    borderColor: Colors.light.border
+                                }}>
+                                    <Text style={{ fontSize: 16, marginRight: 8 }}>📍</Text>
+                                    <TextInput
+                                        placeholder="Search location (e.g., Kenya, Rome)..."
+                                        placeholderTextColor={Colors.light.text.tertiary}
+                                        value={locationSearch}
+                                        onChangeText={setLocationSearch}
+                                        style={{
+                                            flex: 1,
+                                            fontSize: 14,
+                                            color: Colors.light.text.primary
+                                        }}
+                                    />
+                                    {locationSearch.length > 0 && (
+                                        <TouchableOpacity onPress={() => setLocationSearch('')}>
+                                            <Text style={{ fontSize: 18, color: Colors.light.text.secondary }}>✕</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            )}
+
+                            {/* User Region Indicator */}
+                            {profile?.country || profile?.region ? (
+                                <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 12, color: Colors.light.text.tertiary }}>
+                                        Your region: {profile.country || profile.region}
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View style={{
+                                    marginTop: 8,
+                                    padding: 12,
+                                    backgroundColor: Colors.secondary.main + '20',
+                                    borderRadius: 8,
+                                    borderLeftWidth: 3,
+                                    borderLeftColor: Colors.secondary.main
+                                }}>
+                                    <Text style={{ fontSize: 12, color: Colors.light.text.primary, fontWeight: '600' }}>
+                                        💡 Set your country/region in Profile Settings
+                                    </Text>
+                                    <Text style={{ fontSize: 11, color: Colors.light.text.secondary, marginTop: 4 }}>
+                                        Local/International filtering works best when you set your location
+                                    </Text>
+                                </View>
                             )}
                         </View>
                     )}
-
-                    {/* User Region Indicator */}
-                    {profile?.country || profile?.region ? (
-                        <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={{ fontSize: 12, color: Colors.light.text.tertiary }}>
-                                Your region: {profile.country || profile.region}
-                            </Text>
-                        </View>
-                    ) : (
-                        <View style={{
-                            marginTop: 8,
-                            padding: 12,
-                            backgroundColor: Colors.secondary.main + '20',
-                            borderRadius: 8,
-                            borderLeftWidth: 3,
-                            borderLeftColor: Colors.secondary.main
-                        }}>
-                            <Text style={{ fontSize: 12, color: Colors.light.text.primary, fontWeight: '600' }}>
-                                💡 Set your country/region in Profile Settings
-                            </Text>
-                            <Text style={{ fontSize: 11, color: Colors.light.text.secondary, marginTop: 4 }}>
-                                Local/International filtering works best when you set your location
-                            </Text>
-                        </View>
-                    )}
-                </View>
+                </>
             )}
 
             {/* Error Message */}

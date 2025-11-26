@@ -110,7 +110,7 @@ export default function TwoFactorAuth() {
                         alignItems: 'center'
                     }}
                     disabled={!isEnabled}
-                    onPress={() => Alert.alert('Coming Soon', 'SMS configuration coming soon.')}
+                    onPress={() => router.push('/profile/two-factor-sms' as any)}
                 >
                     <View style={{
                         width: 48,
@@ -156,7 +156,7 @@ export default function TwoFactorAuth() {
                         alignItems: 'center'
                     }}
                     disabled={!isEnabled}
-                    onPress={() => Alert.alert('Coming Soon', 'Authenticator app configuration coming soon.')}
+                    onPress={() => router.push('/profile/two-factor-authenticator' as any)}
                 >
                     <View style={{
                         width: 48,

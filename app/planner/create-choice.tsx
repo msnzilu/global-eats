@@ -27,13 +27,13 @@ export default function CreateMealPlanChoice() {
                 </Text>
             </View>
 
-            <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
+            <View style={{ flex: 1, padding: 20, justifyContent: 'center' }}>
                 {/* View History Button */}
                 <TouchableOpacity
                     style={{
                         backgroundColor: 'white',
                         borderRadius: 12,
-                        padding: 16,
+                        padding: 10,
                         marginBottom: 32,
                         flexDirection: 'row',
                         alignItems: 'center',
