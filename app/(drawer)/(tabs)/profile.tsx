@@ -111,6 +111,7 @@ export default function Profile() {
             title: 'Account',
             items: [
                 { icon: '👤', label: 'Personal Information', route: '/profile/personal' },
+                { icon: '💳', label: 'Subscription', route: '/subscription/manage' },
                 { icon: '⚙️', label: 'Notification Settings', route: '/profile/notifications' },
                 { icon: '🔒', label: 'Privacy & Security', route: '/profile/privacy' },
             ]

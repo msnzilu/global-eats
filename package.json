@@ -27,6 +27,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@reduxjs/toolkit": "^2.10.1",
+    "@stripe/stripe-react-native": "^0.57.0",
     "expo": "~54.0.25",
     "expo-auth-session": "~7.0.9",
     "expo-constants": "~18.0.10",
@@ -61,6 +62,7 @@
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
     "rimraf": "^6.1.0",
+    "stripe": "^20.0.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
@@ -83,5 +85,6 @@
       "rimraf": "^6.1.0"
     }
   },
-  "private": true
+  "private": true,
+  "packageManager": "pnpm@10.23.0+sha512.21c4e5698002ade97e4efe8b8b4a89a8de3c85a37919f957e7a0f30f38fbc5bbdd05980ffe29179b2fb6e6e691242e098d945d1601772cad0fef5fb6411e2a4b"
 }

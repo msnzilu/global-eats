@@ -43,7 +43,12 @@ export interface User {
   region?: string;
 
   // Subscription
-  subscriptionTier: 'free' | 'premium' | 'family';
+  subscriptionTier: 'free' | 'premium';
+  subscriptionStatus?: 'active' | 'canceled' | 'past_due' | 'trialing';
+  subscriptionEndDate?: Timestamp;
+  cancelAtPeriodEnd?: boolean;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 // ============================================================================
@@ -308,7 +313,7 @@ export interface NotificationPreferences {
 // ============================================================================
 
 export interface SubscriptionPlan {
-  tier: 'free' | 'premium' | 'family';
+  tier: 'free' | 'premium';
   name: string;
   price: number;
   billingPeriod: 'monthly' | 'yearly';

@@ -1,12 +1,14 @@
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CreateMealPlanChoice() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { profile } = useUserProfile();
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -124,9 +126,23 @@ export default function CreateMealPlanChoice() {
                         shadowRadius: 8,
                         elevation: 3,
                         borderWidth: 1,
-                        borderColor: Colors.secondary.main
+                        borderColor: Colors.secondary.main,
+                        opacity: profile?.subscriptionTier === 'free' ? 0.8 : 1
                     }}
-                    onPress={() => router.push('/planner/create-ai')}
+                    onPress={() => {
+                        if (profile?.subscriptionTier === 'free') {
+                            Alert.alert(
+                                'Premium Feature',
+                                'AI Meal Plan Generation is available for Premium users only.',
+                                [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Upgrade', onPress: () => router.push('/subscription/manage') }
+                                ]
+                            );
+                        } else {
+                            router.push('/planner/create-ai');
+                        }
+                    }}
                     activeOpacity={0.7}
                 >
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
@@ -139,11 +155,29 @@ export default function CreateMealPlanChoice() {
                             justifyContent: 'center',
                             marginRight: 16
                         }}>
-                            <Text style={{ fontSize: 24 }}>🤖</Text>
+                            {profile?.subscriptionTier === 'free' ? (
+                                <Ionicons name="lock-closed" size={24} color={Colors.secondary.main} />
+                            ) : (
+                                <Text style={{ fontSize: 24 }}>🤖</Text>
+                            )}
                         </View>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: Colors.light.text.primary }}>
-                            Auto Generate
-                        </Text>
+                        <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text style={{ fontSize: 20, fontWeight: 'bold', color: Colors.light.text.primary }}>
+                                    Auto Generate
+                                </Text>
+                                {profile?.subscriptionTier === 'free' && (
+                                    <View style={{
+                                        backgroundColor: Colors.secondary.main,
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 2,
+                                        borderRadius: 4
+                                    }}>
+                                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>PREMIUM</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
                     </View>
                     <Text style={{ fontSize: 16, color: Colors.light.text.secondary, lineHeight: 24 }}>
                         Tell us your goals and preferences, and let us create a complete meal plan for you in seconds.

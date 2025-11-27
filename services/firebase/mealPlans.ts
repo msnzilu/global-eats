@@ -14,7 +14,7 @@ export async function checkMealPlanLimit(userId: string): Promise<boolean> {
     const userProfile = await getUserProfile(userId);
 
     // Premium users have no limit
-    if (userProfile?.subscriptionTier === 'premium' || userProfile?.subscriptionTier === 'family') {
+    if (userProfile?.subscriptionTier === 'premium') {
         return true;
     }
 

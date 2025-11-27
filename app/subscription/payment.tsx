@@ -1,14 +1,17 @@
 import { MOCK_PAYMENT_METHODS, SUBSCRIPTION_PLANS, YEARLY_SUBSCRIPTION_PLANS } from '@/constants/subscriptions';
+import { useAuth } from '@/hooks/useAuth';
+import { simulateSuccessfulPayment } from '@/services/firebase/subscriptions';
 import { Colors, Typography } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PaymentScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { user } = useAuth();
     const params = useLocalSearchParams<{ tier: string; period: string }>();
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(MOCK_PAYMENT_METHODS[0].id);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -17,18 +20,27 @@ export default function PaymentScreen() {
     const plans = billingPeriod === 'monthly' ? SUBSCRIPTION_PLANS : YEARLY_SUBSCRIPTION_PLANS;
     const selectedPlan = plans.find((p) => p.tier === params.tier);
 
-    if (!selectedPlan) {
+    if (!selectedPlan || !user) {
         return null;
     }
 
     const handlePayment = async () => {
         setIsProcessing(true);
 
-        // Simulate payment processing
-        setTimeout(() => {
+        try {
+            // Simulate payment processing
+            // In production, this would integrate with Stripe
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Update user subscription
+            await simulateSuccessfulPayment(user.uid, 'premium', billingPeriod);
+            
             setIsProcessing(false);
             router.replace('/subscription/success');
-        }, 2000);
+        } catch (error: any) {
+            setIsProcessing(false);
+            Alert.alert('Payment Failed', error.message || 'An error occurred during payment processing');
+        }
     };
 
     const getPaymentMethodIcon = (type: string) => {

@@ -535,44 +535,46 @@ export default function Recipes() {
                 </View>
             ) : (
                 <>
-                    {/* Recipe List */}
-                    <ScrollView
-                        style={{ flex: 1 }}
-                        contentContainerStyle={{
-                            paddingHorizontal: 24,
-                            paddingTop: 24,
-                            paddingBottom: 100 + insets.bottom
-                        }}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {filteredRecipes.length > 0 ? (
-                            filteredRecipes.map((recipe) => (
-                                <RecipeCard key={recipe.id} recipe={recipe} />
-                            ))
-                        ) : (
-                            <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-                                <Text style={{ fontSize: 60, marginBottom: 16 }}>📖</Text>
-                                <Text style={{
-                                    fontSize: 18,
-                                    fontWeight: '600',
-                                    color: Colors.light.text.primary,
-                                    marginBottom: 8
-                                }}>
-                                    {activeTab === 'my-recipes' ? 'No Recipes Yet' : 'Discover Recipes'}
-                                </Text>
-                                <Text style={{
-                                    fontSize: 14,
-                                    color: Colors.light.text.secondary,
-                                    textAlign: 'center',
-                                    paddingHorizontal: 40
-                                }}>
-                                    {activeTab === 'my-recipes'
-                                        ? 'Create your first recipe or fork one from Discover'
-                                        : 'Search for recipes based on your preferences'}
-                                </Text>
-                            </View>
-                        )}
-                    </ScrollView>
+                    {/* Only show recipe list if not on discover tab OR if premium user */}
+                    {(activeTab !== 'discover' || profile?.subscriptionTier !== 'free') && (
+                        <ScrollView
+                            style={{ flex: 1 }}
+                            contentContainerStyle={{
+                                paddingHorizontal: 24,
+                                paddingTop: 24,
+                                paddingBottom: 100 + insets.bottom
+                            }}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {filteredRecipes.length > 0 ? (
+                                filteredRecipes.map((recipe) => (
+                                    <RecipeCard key={recipe.id} recipe={recipe} />
+                                ))
+                            ) : (
+                                <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+                                    <Text style={{ fontSize: 60, marginBottom: 16 }}>📖</Text>
+                                    <Text style={{
+                                        fontSize: 18,
+                                        fontWeight: '600',
+                                        color: Colors.light.text.primary,
+                                        marginBottom: 8
+                                    }}>
+                                        {activeTab === 'my-recipes' ? 'No Recipes Yet' : 'Discover Recipes'}
+                                    </Text>
+                                    <Text style={{
+                                        fontSize: 14,
+                                        color: Colors.light.text.secondary,
+                                        textAlign: 'center',
+                                        paddingHorizontal: 40
+                                    }}>
+                                        {activeTab === 'my-recipes'
+                                            ? 'Create your first recipe or fork one from Discover'
+                                            : 'Search for recipes based on your preferences'}
+                                    </Text>
+                                </View>
+                            )}
+                        </ScrollView>
+                    )}
                 </>
             )}
 

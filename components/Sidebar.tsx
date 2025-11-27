@@ -111,7 +111,7 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
         {
             title: 'Account',
             items: [
-                { icon: 'card-outline', label: 'Subscription', route: '/subscription' },
+                { icon: 'card-outline', label: 'Subscription', route: '/subscription/manage' },
                 { icon: 'settings-outline', label: 'Notification Settings', route: '/profile/notifications' },
                 { icon: 'lock-closed-outline', label: 'Privacy & Security', route: '/profile/privacy' },
             ]

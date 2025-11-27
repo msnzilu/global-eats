@@ -36,20 +36,6 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
             'Export meal plans',
         ],
     },
-    {
-        tier: 'family',
-        name: 'Family',
-        price: 14.99,
-        billingPeriod: 'monthly',
-        features: [
-            'Everything in Premium',
-            'Up to 6 family members',
-            'Shared meal plans',
-            'Family nutrition dashboard',
-            'Multiple dietary preferences',
-            'Dedicated support',
-        ],
-    },
 ];
 
 export const YEARLY_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
@@ -68,14 +54,6 @@ export const YEARLY_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         popular: true,
         savings: 'Save 17%',
         features: SUBSCRIPTION_PLANS[1].features,
-    },
-    {
-        tier: 'family',
-        name: 'Family',
-        price: 149.99,
-        billingPeriod: 'yearly',
-        savings: 'Save 17%',
-        features: SUBSCRIPTION_PLANS[2].features,
     },
 ];
 
@@ -114,36 +92,33 @@ export const FEATURE_COMPARISON = [
     {
         category: 'Meal Planning',
         features: [
-            { name: '7-day meal plans', free: true, premium: true, family: true },
-            { name: '30-day meal plans', free: false, premium: true, family: true },
-            { name: 'Custom meal plans', free: false, premium: true, family: true },
-            { name: 'Shared family plans', free: false, premium: false, family: true },
+            { name: '7-day meal plans', free: true, premium: true },
+            { name: '30-day meal plans', free: false, premium: true },
+            { name: 'Custom meal plans', free: false, premium: true },
         ],
     },
     {
         category: 'Recipes',
         features: [
-            { name: 'Basic recipes (100+)', free: true, premium: true, family: true },
-            { name: 'Full recipe library (1000+)', free: false, premium: true, family: true },
-            { name: 'Custom recipe creation', free: false, premium: true, family: true },
-            { name: 'Recipe import', free: false, premium: true, family: true },
+            { name: 'Basic recipes (100+)', free: true, premium: true },
+            { name: 'Full recipe library (1000+)', free: false, premium: true },
+            { name: 'Custom recipe creation', free: false, premium: true },
+            { name: 'Recipe import', free: false, premium: true },
         ],
     },
     {
         category: 'Tracking',
         features: [
-            { name: 'Basic nutrition tracking', free: true, premium: true, family: true },
-            { name: 'Advanced analytics', free: false, premium: true, family: true },
-            { name: 'Inventory management', free: true, premium: true, family: true },
-            { name: 'Family nutrition dashboard', free: false, premium: false, family: true },
+            { name: 'Basic nutrition tracking', free: true, premium: true },
+            { name: 'Advanced analytics', free: false, premium: true },
+            { name: 'Inventory management', free: true, premium: true },
         ],
     },
     {
         category: 'Support',
         features: [
-            { name: 'Standard support', free: true, premium: true, family: true },
-            { name: 'Priority support', free: false, premium: true, family: true },
-            { name: 'Dedicated support', free: false, premium: false, family: true },
+            { name: 'Standard support', free: true, premium: true },
+            { name: 'Priority support', free: false, premium: true },
         ],
     },
 ];
@@ -181,33 +156,6 @@ export const SUBSCRIPTION_BENEFITS = {
             icon: '⚡',
             title: 'Priority Support',
             description: 'Get help when you need it',
-        },
-    ],
-    family: [
-        {
-            icon: '👨‍👩‍👧‍👦',
-            title: 'Family Sharing',
-            description: 'Up to 6 family members included',
-        },
-        {
-            icon: '🔄',
-            title: 'Shared Meal Plans',
-            description: 'Coordinate meals with your family',
-        },
-        {
-            icon: '📈',
-            title: 'Family Dashboard',
-            description: 'Track nutrition for the whole family',
-        },
-        {
-            icon: '🎯',
-            title: 'Multiple Preferences',
-            description: 'Different diets for each member',
-        },
-        {
-            icon: '💬',
-            title: 'Dedicated Support',
-            description: 'Premium support for your family',
         },
     ],
 };

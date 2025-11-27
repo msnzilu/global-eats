@@ -1,16 +1,18 @@
+import { useAuth } from '@/hooks/useAuth';
 import { useMealPlan } from '@/hooks/useMealPlan';
 import { MealPlan } from '@/types';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MealPlanHistory() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { getAllPlans, setActivePlan, deletePlan, activePlan } = useMealPlan();
+    const { profile } = useAuth();
 
     const [plans, setPlans] = useState<MealPlan[]>([]);
     const [loading, setLoading] = useState(true);
@@ -64,6 +66,43 @@ export default function MealPlanHistory() {
                 }
             ]
         );
+    };
+
+    const handleExport = async (plan: MealPlan) => {
+        // @ts-ignore
+        if (profile?.subscriptionTier === 'free') {
+             Alert.alert(
+                'Premium Feature',
+                'Exporting meal plans is available for Premium users only.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Upgrade', onPress: () => router.push('/subscription/manage') }
+                ]
+            );
+            return;
+        }
+
+        try {
+            const planName = `${plan.duration}-Day Plan`;
+            const date = formatDate(plan.createdAt);
+            let message = `📅 ${planName} (${date})\n\n`;
+
+            plan.days.forEach((day, index) => {
+                message += `Day ${index + 1}\n`;
+                day.meals.forEach(meal => {
+                    message += `• ${meal.mealType}: ${meal.recipeName} (${meal.calories} cal)\n`;
+                });
+                message += '\n';
+            });
+
+            await Share.share({
+                message,
+                title: `Meal Plan Export - ${date}`
+            });
+        } catch (err) {
+            console.error('Export error:', err);
+            Alert.alert('Error', 'Failed to export meal plan');
+        }
     };
 
     const formatDate = (timestamp: any) => {
@@ -318,6 +357,27 @@ export default function MealPlanHistory() {
                                             </Text>
                                         </TouchableOpacity>
                                     )}
+                                    <TouchableOpacity
+                                        style={{
+                                            flex: 1,
+                                            backgroundColor: Colors.light.surface,
+                                            paddingVertical: 12,
+                                            borderRadius: 10,
+                                            alignItems: 'center',
+                                            borderWidth: 1,
+                                            borderColor: Colors.secondary.main,
+                                            marginRight: 8
+                                        }}
+                                        onPress={() => handleExport(plan)}
+                                    >
+                                        <Text style={{
+                                            fontSize: 14,
+                                            fontWeight: '600',
+                                            color: Colors.secondary.main
+                                        }}>
+                                            Export
+                                        </Text>
+                                    </TouchableOpacity>
                                     <TouchableOpacity
                                         style={{
                                             flex: isActive ? 1 : 0,

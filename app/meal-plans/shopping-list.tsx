@@ -1,6 +1,6 @@
+import { useAuth } from '@/hooks/useAuth';
 import { useMealPlan } from '@/hooks/useMealPlan';
 import { useShoppingList } from '@/hooks/useShoppingList';
-import { auth } from '@/services/firebase/config';
 import { Colors } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function ShoppingList() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { profile, isLoading: authLoading } = useAuth();
 
     // Get active meal plan
     const { activePlan } = useMealPlan();
@@ -17,14 +18,15 @@ export default function ShoppingList() {
     // Pass active plan ID to shopping list hook
     const {
         shoppingList,
-        loading,
+        loading: listLoading,
         error,
         toggleItem,
         addCheckedToInventory,
         clearCheckedItems
     } = useShoppingList(activePlan?.id);
 
-    const currentUser = auth.currentUser;
+    // Combine loading states
+    const loading = authLoading || listLoading;
 
     const handleToggleItem = async (itemId: string) => {
         try {
@@ -94,6 +96,94 @@ export default function ShoppingList() {
             Alert.alert('Error', 'Failed to share shopping list');
         }
     };
+
+    // Check subscription tier
+    // @ts-ignore - subscriptionTier might not be in the local UserProfile definition yet
+    const isFreeUser = profile?.subscriptionTier === 'free';
+
+    if (!authLoading && isFreeUser) {
+        return (
+            <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
+                {/* Header */}
+                <View style={{
+                    backgroundColor: Colors.primary.main,
+                    paddingTop: insets.top + 16,
+                    paddingBottom: 20,
+                    paddingHorizontal: 24,
+                    flexDirection: 'row',
+                    alignItems: 'center'
+                }}>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{ marginRight: 16 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <Text style={{
+                        fontSize: 24,
+                        fontWeight: 'bold',
+                        color: 'white'
+                    }}>
+                        Shopping List
+                    </Text>
+                </View>
+
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+                    <View style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 40,
+                        backgroundColor: `${Colors.primary.main}15`,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 24
+                    }}>
+                        <Ionicons name="lock-closed" size={40} color={Colors.primary.main} />
+                    </View>
+                    
+                    <Text style={{
+                        fontSize: 24,
+                        fontWeight: 'bold',
+                        color: Colors.light.text.primary,
+                        textAlign: 'center',
+                        marginBottom: 12
+                    }}>
+                        Premium Feature
+                    </Text>
+                    
+                    <Text style={{
+                        fontSize: 16,
+                        color: Colors.light.text.secondary,
+                        textAlign: 'center',
+                        marginBottom: 32,
+                        lineHeight: 24
+                    }}>
+                        Upgrade to Premium to generate smart shopping lists from your meal plans and manage your inventory automatically.
+                    </Text>
+
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: Colors.primary.main,
+                            paddingHorizontal: 32,
+                            paddingVertical: 16,
+                            borderRadius: 12,
+                            width: '100%',
+                            alignItems: 'center'
+                        }}
+                        onPress={() => router.push('/subscription/manage')}
+                    >
+                        <Text style={{
+                            color: 'white',
+                            fontSize: 16,
+                            fontWeight: 'bold'
+                        }}>
+                            Upgrade to Premium
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     const items = shoppingList?.items || [];
     const groupedItems = items.reduce((acc, item) => {

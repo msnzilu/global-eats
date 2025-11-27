@@ -7,12 +7,20 @@ import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'expo-router';
+
 export default function Dashboard() {
+    const router = useRouter();
+    const { profile } = useAuth();
     const insets = useSafeAreaInsets();
     const [dateRange, setDateRange] = useState<7 | 14 | 30>(7);
     const [sidebarVisible, setSidebarVisible] = useState(false);
 
     const { stats, loading, error } = useDashboard(dateRange);
+
+    // @ts-ignore
+    const isFreeUser = profile?.subscriptionTier === 'free';
 
     return (
         <View style={{ flex: 1, backgroundColor: Colors.light.background }}>
@@ -149,121 +157,128 @@ export default function Dashboard() {
                         ))}
                     </View>
 
-                    {/* Macro Distribution */}
-                    {stats && stats.macroDistribution && (
-                        <View style={{
-                            backgroundColor: 'white',
-                            borderRadius: 16,
-                            padding: 20,
-                            marginBottom: 16,
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 8,
-                            elevation: 3
-                        }}>
-                            <Text style={{
-                                fontSize: 18,
-                                fontWeight: 'bold',
-                                color: Colors.light.text.primary,
-                                marginBottom: 16
+                    {/* Advanced Analytics Section */}
+                    {isFreeUser ? (
+                        <PremiumAnalyticsCard onPress={() => router.push('/subscription/manage')} />
+                    ) : (
+                        <>
+                            {/* Macro Distribution */}
+                            {stats && stats.macroDistribution && (
+                                <View style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: 16,
+                                    padding: 20,
+                                    marginBottom: 16,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 8,
+                                    elevation: 3
+                                }}>
+                                    <Text style={{
+                                        fontSize: 18,
+                                        fontWeight: 'bold',
+                                        color: Colors.light.text.primary,
+                                        marginBottom: 16
+                                    }}>
+                                        Macro Distribution
+                                    </Text>
+                                    <View style={{ gap: 12 }}>
+                                        <MacroBar
+                                            label="Protein"
+                                            percentage={stats.macroDistribution.protein}
+                                            color="#EF4444"
+                                        />
+                                        <MacroBar
+                                            label="Carbs"
+                                            percentage={stats.macroDistribution.carbs}
+                                            color="#3B82F6"
+                                        />
+                                        <MacroBar
+                                            label="Fat"
+                                            percentage={stats.macroDistribution.fat}
+                                            color="#FBBF24"
+                                        />
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Calorie Trend - Placeholder for now */}
+                            <View style={{
+                                backgroundColor: 'white',
+                                borderRadius: 16,
+                                padding: 20,
+                                marginBottom: 16,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 8,
+                                elevation: 3
                             }}>
-                                Macro Distribution
-                            </Text>
-                            <View style={{ gap: 12 }}>
-                                <MacroBar
-                                    label="Protein"
-                                    percentage={stats.macroDistribution.protein}
-                                    color="#EF4444"
-                                />
-                                <MacroBar
-                                    label="Carbs"
-                                    percentage={stats.macroDistribution.carbs}
-                                    color="#3B82F6"
-                                />
-                                <MacroBar
-                                    label="Fat"
-                                    percentage={stats.macroDistribution.fat}
-                                    color="#FBBF24"
-                                />
+                                <Text style={{
+                                    fontSize: 18,
+                                    fontWeight: 'bold',
+                                    color: Colors.light.text.primary,
+                                    marginBottom: 16
+                                }}>
+                                    Calorie Trend
+                                </Text>
+                                <View style={{
+                                    height: 200,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: Colors.light.surface,
+                                    borderRadius: 12
+                                }}>
+                                    <Ionicons name="analytics-outline" size={48} color={Colors.light.text.tertiary} />
+                                    <Text style={{
+                                        fontSize: 14,
+                                        color: Colors.light.text.secondary,
+                                        marginTop: 12
+                                    }}>
+                                        Chart visualization coming soon
+                                    </Text>
+                                </View>
                             </View>
-                        </View>
+
+                            {/* Meal Completion Rate - Placeholder for now */}
+                            <View style={{
+                                backgroundColor: 'white',
+                                borderRadius: 16,
+                                padding: 20,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 8,
+                                elevation: 3
+                            }}>
+                                <Text style={{
+                                    fontSize: 18,
+                                    fontWeight: 'bold',
+                                    color: Colors.light.text.primary,
+                                    marginBottom: 16
+                                }}>
+                                    Meal Completion Rate
+                                </Text>
+                                <View style={{
+                                    height: 200,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: Colors.light.surface,
+                                    borderRadius: 12
+                                }}>
+                                    <Ionicons name="bar-chart-outline" size={48} color={Colors.light.text.tertiary} />
+                                    <Text style={{
+                                        fontSize: 14,
+                                        color: Colors.light.text.secondary,
+                                        marginTop: 12
+                                    }}>
+                                        Chart visualization coming soon
+                                    </Text>
+                                </View>
+                            </View>
+                        </>
                     )}
-
-                    {/* Calorie Trend - Placeholder for now */}
-                    <View style={{
-                        backgroundColor: 'white',
-                        borderRadius: 16,
-                        padding: 20,
-                        marginBottom: 16,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 8,
-                        elevation: 3
-                    }}>
-                        <Text style={{
-                            fontSize: 18,
-                            fontWeight: 'bold',
-                            color: Colors.light.text.primary,
-                            marginBottom: 16
-                        }}>
-                            Calorie Trend
-                        </Text>
-                        <View style={{
-                            height: 200,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: Colors.light.surface,
-                            borderRadius: 12
-                        }}>
-                            <Ionicons name="analytics-outline" size={48} color={Colors.light.text.tertiary} />
-                            <Text style={{
-                                fontSize: 14,
-                                color: Colors.light.text.secondary,
-                                marginTop: 12
-                            }}>
-                                Chart visualization coming soon
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Meal Completion Rate - Placeholder for now */}
-                    <View style={{
-                        backgroundColor: 'white',
-                        borderRadius: 16,
-                        padding: 20,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 8,
-                        elevation: 3
-                    }}>
-                        <Text style={{
-                            fontSize: 18,
-                            fontWeight: 'bold',
-                            color: Colors.light.text.primary,
-                            marginBottom: 16
-                        }}>
-                            Meal Completion Rate
-                        </Text>
-                        <View style={{
-                            height: 200,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: Colors.light.surface,
-                            borderRadius: 12
-                        }}>
-                            <Ionicons name="bar-chart-outline" size={48} color={Colors.light.text.tertiary} />
-                            <Text style={{
-                                fontSize: 14,
-                                color: Colors.light.text.secondary,
-                                marginTop: 12
-                            }}>
-                                Chart visualization coming soon
-                            </Text>
-                        </View>
-                    </View>
 
                     {/* Empty State */}
                     {stats && stats.mealsCompleted === 0 && (
@@ -394,6 +409,74 @@ function MacroBar({ label, percentage, color }: MacroBarProps) {
                     borderRadius: 4
                 }} />
             </View>
+        </View>
+    );
+}
+
+function PremiumAnalyticsCard({ onPress }: { onPress: () => void }) {
+    return (
+        <View style={{
+            backgroundColor: 'white',
+            borderRadius: 16,
+            padding: 24,
+            marginBottom: 16,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 3,
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: `${Colors.primary.main}30`
+        }}>
+            <View style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: `${Colors.primary.main}15`,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16
+            }}>
+                <Ionicons name="stats-chart" size={32} color={Colors.primary.main} />
+            </View>
+            <Text style={{
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: Colors.light.text.primary,
+                marginBottom: 8,
+                textAlign: 'center'
+            }}>
+                Advanced Analytics
+            </Text>
+            <Text style={{
+                fontSize: 14,
+                color: Colors.light.text.secondary,
+                textAlign: 'center',
+                marginBottom: 24,
+                lineHeight: 20
+            }}>
+                Unlock detailed macro tracking, calorie trends, and meal completion insights with Premium.
+            </Text>
+            <TouchableOpacity
+                style={{
+                    backgroundColor: Colors.primary.main,
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    width: '100%',
+                    alignItems: 'center'
+                }}
+                onPress={onPress}
+            >
+                <Text style={{
+                    color: 'white',
+                    fontSize: 16,
+                    fontWeight: 'bold'
+                }}>
+                    Upgrade to Premium
+                </Text>
+            </TouchableOpacity>
         </View>
     );
 }
